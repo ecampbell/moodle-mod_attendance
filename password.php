@@ -47,5 +47,12 @@ $PAGE->set_context(context_system::instance());
 $PAGE->set_title(get_string('password', 'attendance'));
 
 echo $OUTPUT->header();
+echo html_writer::tag('h2', get_string('passwordgrp', 'attendance'));
 echo html_writer::span($session->studentpassword, 'student-password');
+if (isset($session->includeqrcode) && $session->includeqrcode == 1) {
+    $qrcodeurl = '/mod/attendance/attendance_qr.php?studentpassword=' . $session->studentpassword . '&sessid=' . $session->id;
+    $qrurl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' . urlencode($CFG->wwwroot . $qrcodeurl);
+    echo html_writer::tag('h3', get_string('qrcode', 'attendance'));
+    echo html_writer::img($qrurl);
+}
 echo $OUTPUT->footer();
