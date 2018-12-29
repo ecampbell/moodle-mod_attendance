@@ -1137,6 +1137,15 @@ class mod_attendance_renderer extends plugin_renderer_base {
                 $row->cells[] = html_writer::link($url, $icon);
             }
 
+            if (has_capability('mod/attendance:takeattendances', $context)) {
+                $params = array('id' => $userdata->filtercontrols->cm->id,
+                    'sessionid' => $sess->id,
+                    'grouptype' => $sess->groupid);
+                $url = new moodle_url('/mod/attendance/generatesheet.php', $params);
+                $icon = $OUTPUT->pix_icon('print', get_string('generatesheet', 'attendance'), 'attendance');
+                $row->cells[] = html_writer::link($url, $icon);
+            }
+
             $table->data[] = $row;
         }
 
