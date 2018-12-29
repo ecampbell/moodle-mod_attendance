@@ -316,6 +316,16 @@ class attendance_manage_data implements renderable {
     }
 
     /**
+     * Helper function to return urls.
+     * @param int $sessionid
+     * @param int $grouptype
+     * @return mixed
+     */
+    public function url_generate($sessionid, $grouptype) {
+        return url_helpers::url_generate($this->att, $sessionid, $grouptype);
+    }
+
+    /**
      * Must be called without or with both parameters
      *
      * @param int $sessionid
@@ -776,6 +786,22 @@ class url_helpers {
         }
 
         return $att->url_take($params);
+    }
+
+    /**
+     * Url generate signin sheet.
+     * @param stdClass $att
+     * @param int $sessionid
+     * @param int $grouptype
+     * @return mixed
+     */
+    public static function url_generate($att, $sessionid, $grouptype) {
+        $params = array('sessionid' => $sessionid);
+        if (isset($grouptype)) {
+            $params['grouptype'] = $grouptype;
+        }
+
+        return $att->url_generate($params);
     }
 
     /**

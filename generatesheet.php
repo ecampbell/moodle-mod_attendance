@@ -25,13 +25,13 @@
 require_once(dirname(__FILE__).'/../../config.php');
 require_once(dirname(__FILE__).'/locallib.php');
 
-require_once($CFG->dirroot . '../offlinequiz/locallib.php');
-require_once($CFG->dirroot . '../offlinequiz/pdflib.php');
-require_once($CFG->dirroot . '../offlinequiz/evallib.php');
-require_once($CFG->dirroot . '../offlinequiz/participants/participants_listform.php');
-require_once($CFG->dirroot . '../offlinequiz/participants/participants_uploadform.php');
-require_once($CFG->dirroot . '../offlinequiz/participants/participants_report.php');
-require_once($CFG->dirroot . '../offlinequiz/participants/participants_scanner.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/locallib.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/pdflib.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/evallib.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_listform.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_uploadform.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_report.php');
+require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_scanner.php');
 
 define("MAX_USERS_PER_PAGE", 5000);
 

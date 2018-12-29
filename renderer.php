@@ -342,6 +342,12 @@ class mod_attendance_renderer extends plugin_renderer_base {
                 $title = get_string('takeattendance', 'attendance');
                 $actions .= $this->output->action_icon($url, new pix_icon('t/go', $title));
             }
+            if (has_capability('mod/attendance:takeattendances', $sessdata->att->context)) {
+                $url = $sessdata->url_generate($sess->id, $sess->groupid);
+                $title = get_string('generatesigninsheet', 'attendance');
+                $actions .= $this->output->action_icon($url, new pix_icon('t/print', $title));
+            }
+
         }
 
         if (has_capability('mod/attendance:manageattendances', $sessdata->att->context)) {
@@ -1142,7 +1148,7 @@ class mod_attendance_renderer extends plugin_renderer_base {
                     'sessionid' => $sess->id,
                     'grouptype' => $sess->groupid);
                 $url = new moodle_url('/mod/attendance/generatesheet.php', $params);
-                $icon = $OUTPUT->pix_icon('print', get_string('generatesheet', 'attendance'), 'attendance');
+                $icon = $OUTPUT->pix_icon('print', get_string('generatesigninsheet', 'attendance'));
                 $row->cells[] = html_writer::link($url, $icon);
             }
 
