@@ -445,6 +445,113 @@ class attendance_take_data implements renderable {
 }
 
 /**
+ * class signinsheet data.
+ *
+ * @copyright  2011 Artem Andreev <andreev.artem@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class attendance_signinsheet_data implements renderable {
+    /** @var array  */
+    public $users;
+    /** @var array|null|stdClass  */
+    public $pageparams;
+    /** @var int  */
+    public $groupmode;
+    /** @var stdclass  */
+    public $cm;
+    /** @var array  */
+    public $statuses;
+    /** @var mixed  */
+    public $sessioninfo;
+    /** @var array  */
+    public $sessionlog;
+    /** @var array  */
+    public $sessions4copy;
+    /** @var bool  */
+    public $updatemode;
+    /** @var string  */
+    private $urlpath;
+    /** @var array */
+    private $urlparams;
+    /** @var mod_attendance_structure  */
+    public $att;
+
+    /**
+     * attendance_signinsheet_data constructor.
+     * @param mod_attendance_structure $att
+     */
+    public function  __construct(mod_attendance_structure $att) {
+        if ($att->pageparams->grouptype) {
+            $this->users = $att->get_users($att->pageparams->grouptype, $att->pageparams->page);
+        } else {
+            $this->users = $att->get_users($att->pageparams->group, $att->pageparams->page);
+        }
+
+        $this->pageparams = $att->pageparams;
+
+        $this->groupmode = $att->get_group_mode();
+        $this->cm = $att->cm;
+
+        $this->statuses = $att->get_statuses();
+
+        $this->sessioninfo = $att->get_session_info($att->pageparams->sessionid);
+        $this->updatemode = $this->sessioninfo->lasttaken > 0;
+
+        if (isset($att->pageparams->copyfrom)) {
+            $this->sessionlog = $att->get_session_log($att->pageparams->copyfrom);
+        } else if ($this->updatemode) {
+            $this->sessionlog = $att->get_session_log($att->pageparams->sessionid);
+        } else {
+            $this->sessionlog = array();
+        }
+
+        if (!$this->updatemode) {
+            $this->sessions4copy = $att->get_today_sessions_for_copy($this->sessioninfo);
+        }
+
+        $this->urlpath = $att->url_take()->out_omit_querystring();
+        $params = $att->pageparams->get_significant_params();
+        $params['id'] = $att->cm->id;
+        $this->urlparams = $params;
+
+        $this->att = $att;
+    }
+
+    /**
+     * Url function
+     * @param array $params
+     * @param array $excludeparams
+     * @return moodle_url
+     */
+    public function url($params=array(), $excludeparams=array()) {
+        $params = array_merge($this->urlparams, $params);
+
+        foreach ($excludeparams as $paramkey) {
+            unset($params[$paramkey]);
+        }
+
+        return new moodle_url($this->urlpath, $params);
+    }
+
+    /**
+     * Url view helper.
+     * @param array $params
+     * @return mixed
+     */
+    public function url_view($params=array()) {
+        return url_helpers::url_view($this->att, $params);
+    }
+
+    /**
+     * Url path helper.
+     * @return string
+     */
+    public function url_path() {
+        return $this->urlpath;
+    }
+}
+
+/**
  * Class user data.
  *
  * @copyright  2011 Artem Andreev <andreev.artem@gmail.com>

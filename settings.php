@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die;
 if ($ADMIN->fulltree) {
     require_once(dirname(__FILE__).'/lib.php');
     require_once(dirname(__FILE__).'/locallib.php');
+    require_once(dirname(__FILE__).'/settingslib.php');
 
     $tabmenu = attendance_print_settings_tabs();
     $settings->add(new admin_setting_heading('attendance_header', '', $tabmenu));
@@ -166,4 +167,13 @@ if ($ADMIN->fulltree) {
         get_string('emailcontent', 'attendance'), get_string('emailcontent_help', 'attendance'),
         get_string('emailcontent_default', 'attendance'), PARAM_RAW));
 
+    // Introductory explanation that all the settings are defaults for the add attendance form Signin Sheet group.
+    $name = new lang_string('signinsheetdefaultsettings', 'mod_attendance');
+    $description = new lang_string('signinsheetdefaultsettings_help', 'mod_attendance');
+    $settings->add(new admin_setting_heading('defaultsigninsheetsettings', $name, $description));
+
+    // User identification.
+    $settings->add(new admin_setting_configtext_signinsheet_user_formula('attendance/signinsheetuseridentification',
+            get_string('signinsheetuseridentification', 'attendance'), get_string('signinsheetconfiguseridentification', 'attendance'),
+            '[7]=idnumber' , PARAM_RAW, 30));
 }

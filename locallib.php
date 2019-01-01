@@ -50,6 +50,9 @@ define('ATTENDANCE_SHAREDIP_FORCE', 2);
 // Max number of sessions available in the warnings set form to trigger warnings.
 define('ATTENDANCE_MAXWARNAFTER', 100);
 
+// Signin sheet formula for defining the user fields
+define('SIGNINSHEET_USER_FORMULA_REGEXP', "/^([^\[]*)\[([\-]?[0-9]+)\]([^\=]*)=([a-z]+)$/");
+
 /**
  * Get statuses,
  *
