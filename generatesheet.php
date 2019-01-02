@@ -47,7 +47,7 @@ $pageparams->perpage    = optional_param('perpage', get_config('attendance', 're
 
 define("MAX_USERS_PER_PAGE", 5000);
 
-$q = optional_param('q', 0, PARAM_INT);                 // Or offlinequiz ID.
+$q = optional_param('q', 0, PARAM_INT);                 // Or session ID.
 $forcenew = optional_param('forcenew', 0, PARAM_INT);
 $mode = optional_param('mode', 'editparticipants', PARAM_ALPHA);
 $action = optional_param('action', '', PARAM_ALPHA);
@@ -113,19 +113,10 @@ $PAGE->set_cacheable(true);
 $PAGE->navbar->add($att->name);
 
 $output = $PAGE->get_renderer('mod_attendance');
-// $tabs = new attendance_tabs($att);
+$tabs = new attendance_tabs($att);
 $sesstable = new attendance_take_data($att);
 
 // Output starts here.
-
-// echo $output->header();
-// echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
-// echo $output->render($tabs);
-// echo $output->render($sesstable);
-
-// echo $output->footer();
-
-// End of original take.php
 
 $PAGE->set_pagelayout('admin');
 $node = $PAGE->settingsnav->find('mod_attendance_participants', navigation_node::TYPE_SETTING);
@@ -138,12 +129,9 @@ $PAGE->requires->yui_module('moodle-mod_attendance-toolboxes',
         'M.mod_attendance.init_resource_toolbox',
         array(array(
                 'courseid' => $course->id,
-                'offlinequizid' => $offlinequiz->id
+                'sessionid' => $pageparams->sessionid
         ))
         );
-
-echo $output->header();
-echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
 
 function find_pdf_file($contextid, $listfilename) {
     $fs = get_file_storage();
@@ -154,58 +142,47 @@ function find_pdf_file($contextid, $listfilename) {
     }
 }
 
-    // We redirect if no list has been created.
-    if (!offlinequiz_partlist_created($offlinequiz)) {
-        redirect('participants.php?q='.$offlinequiz->id, get_string('createlistfirst', 'attendance'));
-    }
-    // Only print headers and tabs if not asked to download data.
-    if (!$download) {
-        echo $OUTPUT->header();
-        // Print the tabs.
-        $currenttab = 'participants';
-        include('tabs.php');
-        echo $OUTPUT->heading(format_string($offlinequiz->name));
-        echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'participants', 'attendance');
-    }
+// Only print headers and tabs if not asked to download data.
+if (!$download) {
+    echo $output->header();
+    echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
+    echo $output->render($tabs);
+    echo $output->render($sesstable);
+    echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'participants', 'attendance');
+}
 
-    echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
+echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
+$pdffile = signinsheet_create_pdf_participants($att, $course->id, $context);
 
-    $sql = "SELECT id, name, number, filename
-              FROM {offlinequiz_p_lists}
-             WHERE offlinequizid = :attendanceid
-          ORDER BY name ASC";
+foreach ($lists as $list) {
+    $fs = get_file_storage();
 
-    $lists = $DB->get_records_sql($sql, array('attendanceid' => $id));
-
-    foreach ($lists as $list) {
-        $fs = get_file_storage();
-
-        $pdffile = null;
-        // Create PDF file if necessary.
-        if (!property_exists($list, 'filename') ||  !$list->filename ||
-                !$pdffile = find_pdf_file($context->id, $list->filename)) {
-            $pdffile = offlinequiz_create_pdf_participants($offlinequiz, $course->id, $list, $context);
-            if (!empty($pdffile)) {
-                $list->filename = $pdffile->get_filename();
-            }
-            $DB->update_record('offlinequiz_p_lists', $list);
-        }
-
-        // Show downloadlink.
-        if ($pdffile) {
-            $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
-                $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
-                '?forcedownload=1';
-            echo $OUTPUT->action_link($url, trim(format_text(get_string('downloadpartpdf', 'offlinequiz', $list->name))));
-
+    $pdffile = null;
+    // Create PDF file if necessary.
+    if (!property_exists($list, 'filename') ||  !$list->filename ||
+            !$pdffile = find_pdf_file($context->id, $list->filename)) {
+        $pdffile = signinsheet_create_pdf_participants($offlinequiz, $course->id, $list, $context);
+        if (!empty($pdffile)) {
             $list->filename = $pdffile->get_filename();
-            $DB->update_record('offlinequiz_p_lists', $list);
-        } else {
-            echo $OUTPUT->notification(format_text(get_string('createpartpdferror', 'offlinequiz', $list->name)));
         }
-        echo '<br />&nbsp;<br />';
+        $DB->update_record('offlinequiz_p_lists', $list);
     }
-    echo $OUTPUT->box_end();
+
+    // Show downloadlink.
+    if ($pdffile) {
+        $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
+            $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
+            '?forcedownload=1';
+        echo $OUTPUT->action_link($url, trim(format_text(get_string('downloadpartpdf', 'offlinequiz', $list->name))));
+
+        $list->filename = $pdffile->get_filename();
+        $DB->update_record('offlinequiz_p_lists', $list);
+    } else {
+        echo $OUTPUT->notification(format_text(get_string('createpartpdferror', 'offlinequiz', $list->name)));
+    }
+    echo '<br />&nbsp;<br />';
+}
+echo $OUTPUT->box_end();
 
 // Finish the page.
 if (!$download) {
