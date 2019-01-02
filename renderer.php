@@ -344,7 +344,7 @@ class mod_attendance_renderer extends plugin_renderer_base {
             }
             if (has_capability('mod/attendance:takeattendances', $sessdata->att->context)) {
                 $url = $sessdata->url_generate($sess->id, $sess->groupid);
-                $title = get_string('generatesigninsheet', 'attendance');
+                $title = get_string('signinsheetgenerate', 'attendance');
                 $actions .= $this->output->action_icon($url, new pix_icon('t/print', $title));
             }
 
@@ -1148,7 +1148,7 @@ class mod_attendance_renderer extends plugin_renderer_base {
                     'sessionid' => $sess->id,
                     'grouptype' => $sess->groupid);
                 $url = new moodle_url('/mod/attendance/generatesheet.php', $params);
-                $icon = $OUTPUT->pix_icon('print', get_string('generatesigninsheet', 'attendance'));
+                $icon = $OUTPUT->pix_icon('print', get_string('signinsheetgenerate', 'attendance'));
                 $row->cells[] = html_writer::link($url, $icon);
             }
 

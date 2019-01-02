@@ -24,7 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-
+// Signin sheet formula for defining the user fields
+define('SIGNINSHEET_USER_FORMULA_REGEXP', "/^([^\[]*)\[([\-]?[0-9]+)\]([^\=]*)=([a-z]+)$/");
 
 /**
  *

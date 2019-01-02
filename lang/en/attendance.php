@@ -217,7 +217,6 @@ $string['eventtakenbystudent'] = 'Attendance taken by student';
 $string['export'] = 'Export';
 $string['extrarestrictions'] = 'Extra restrictions';
 $string['from'] = 'from:';
-$string['generatesigninsheet'] = 'Generate signin sheet';
 $string['gradebookexplanation'] = 'Grade in gradebook';
 $string['gradebookexplanation_help'] = 'The Attendance module displays your current attendance grade based on the number of points you have earned to date and the number of points that could have been earned to date; it does not include class periods in the future. In the gradebook, your attendance grade is based on your current attendance percentage and the number of points that can be earned over the entire duration of the course, including future class periods. As such, your attendance grades displayed in the Attendance module and in the gradebook may not be the same number of points but they are the same percentage.
 
@@ -443,6 +442,7 @@ $string['signinsheetcreatepdfsparticipants'] = 'PDF forms for list of participan
 $string['signinsheetdefaultsettings'] = 'Default attendance signin sheet settings';
 $string['signinsheetdefaultsettings_help'] = 'The values you set here are used as default values for the settings of new attendance signin sheets.';
 $string['signinsheetforthecourse'] = 'Sign-in sheet for the course';
+$string['signinsheetgenerate'] = 'Generate signin sheet';
 $string['signinsheetinvalidformula'] = 'Invalid formula for user identification. The formula must have the form <prefix>[<#digits>]<suffix>=<db-field&>.';
 $string['signinsheetinvalidnumberofdigits'] = 'Invalid number of digits used. Only 1 up to 9 digit(s) are allowed.';
 $string['signinsheetinvaliduserfield'] = 'Invalid field of the user table used.';
