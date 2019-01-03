@@ -105,7 +105,7 @@ class signinsheet_participants_pdf extends signinsheet_pdf
 
         $this->SetXY(145.5, 6.5);
         $this->SetFont('FreeSans', '', 8);
-        $this->Cell(29, 7, get_string('lecturer', 'attendance'), 0, 0, 'L');
+        $this->Cell(29, 7, get_string('signinsheetlecturer', 'attendance'), 0, 0, 'L');
 
         $this->SetXY($x, $y);
     }
@@ -179,7 +179,8 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
     }
 
     $pdf = new signinsheet_participants_pdf('P', 'mm', 'A4');
-    $pdf->listno = $list->number;
+    // $pdf->listno = $list->number;
+    $pdf->listno = 1;
     $title = $att->course->fullname . ', ' . $att->name;
     $pdf->set_title($title);
     $pdf->SetMargins(15, 25, 15);
@@ -192,39 +193,16 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
     $position = 1;
 
     $pdf->SetFont('FreeSans', '', 10);
-    foreach ($participants as $participant) {
+    foreach ($participants->users as $participant) {
         $pdf->Cell(9, 3.5, "$position. ", 0, 0, 'R');
         $pdf->Cell(1, 3.5, '', 0, 0, 'C');
         $x = $pdf->GetX();
         $y = $pdf->GetY();
 
-        for ($i = 1; $i <= 4; $i++) {
-            // Move the boxes slightly down to align with question number.
-            $pdf->Rect($x, $y + 0.6, 3.5, 3.5, '', array('all' => array('width' => 0.2)));
-            $x += 6.5;
-        }
-
-        $pdf->Cell(3, 3.5, '', 0, 0, 'C');
-
-        $pdf->Cell(6, 3.5, '', 0, 0, 'C');
-        // $userkey = substr($participant->{$attendanceconfig->ID_field},
-        //                   strlen($attendanceconfig->ID_prefix), $attendanceconfig->ID_digits);
-        $userkey = strval($participant->id);
-        $pdf->Cell(13, 3.5, $userkey, 0, 0, 'R');
-        $pdf->Cell(12, 3.5, '', 0, 0, 'L');
-        if ($pdf->GetStringWidth($participant->firstname) > 40) {
-            $participant->firstname = substr($participant->firstname, 0, 20);
-        }
-        if ($pdf->GetStringWidth($participant->lastname) > 55) {
-            $participant->lastname = substr($participant->lastname, 0, 25);
-        }
-        $pdf->Cell(55, 3.5, $participant->lastname, 0, 0, 'L');
-        $pdf->Cell(40, 3.5, $participant->firstname, 0, 0, 'L');
-        $pdf->Cell(10, 3.5, '', 0, 1, 'R');
         // Print barcode.
         $value = substr('000000000000000000000000'.base_convert($participant->id, 10, 2), -25);
         $y = $pdf->GetY() - 3.5;
-        $x = 170;
+        // $x = 170;
         $pdf->Rect($x, $y, 0.2, 3.5, 'F');
         $pdf->Rect($x, $y, 0.7, 0.2, 'F');
         $pdf->Rect($x, $y + 3.5, 0.7, 0.2, 'F');
@@ -244,6 +222,31 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
         }
         $pdf->Rect($x, $y, 0.2, 3.7, 'F');
         $pdf->Rect(15, ($pdf->GetY() + 1), 175, 0.2, 'F');
+
+        // Print 4 boxes for P(resent), L(ate), E(xcuse) and A(bsent)
+        for ($i = 1; $i <= 4; $i++) {
+            // Move the boxes slightly down to align with question number.
+            $pdf->Rect($x, $y + 0.6, 3.5, 3.5, '', array('all' => array('width' => 0.2)));
+            $x += 6.5;
+        }
+
+        $pdf->Cell(3, 3.5, '', 0, 0, 'C');
+
+        $pdf->Cell(6, 3.5, '', 0, 0, 'C');
+
+        $pdf->Cell(12, 3.5, '', 0, 0, 'L');
+
+        // Print the participant name
+        if ($pdf->GetStringWidth($participant->firstname) > 40) {
+            $participant->firstname = substr($participant->firstname, 0, 20);
+        }
+        if ($pdf->GetStringWidth($participant->lastname) > 55) {
+            $participant->lastname = substr($participant->lastname, 0, 25);
+        }
+        $fullname = $participant->lastname . ', ' . $participant->firstname;
+        $pdf->Cell(95, 3.5, $fullname, 0, 0, 'L');
+        $pdf->Cell(10, 3.5, '', 0, 1, 'R');
+        
         if ($position % NUMBERS_PER_PAGE != 0) {
             $pdf->Ln(3.6);
         } else {
@@ -267,7 +270,7 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
             'filearea' => 'participants',
             'filepath' => '/',
             'itemid' => 0,
-            'filename' => $fileprefix . '_' . $list->id . '_' . $timestamp . '.pdf');
+            'filename' => $fileprefix . '_' . $timestamp . '.pdf');
 
     if ($oldfile = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
             $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename'])) {

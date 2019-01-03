@@ -110,7 +110,7 @@ if (!$download) {
     echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
     // echo $output->render($tabs);
     // echo $output->render($sesstable);
-    echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'participants', 'attendance');
+    echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
 }
 
 echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
@@ -120,7 +120,7 @@ $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants,
 if ($pdffile) {
     $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
         $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
-        '?forcedownload=1';
+        ''; // '?forcedownload=1';
     echo $OUTPUT->action_link($url, get_string('signinsheetpdfdownload', 'attendance', $pdffile->get_filename()));
 } else {
     echo $OUTPUT->notification(get_string('signinsheetpdferror', 'attendance', $list->name));
