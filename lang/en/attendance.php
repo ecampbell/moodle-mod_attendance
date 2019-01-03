@@ -441,11 +441,15 @@ $string['signinsheetconfiguseridentification'] = 'A formula describing the user 
 $string['signinsheetcreatepdfsparticipants'] = 'PDF forms for list of participants';
 $string['signinsheetdefaultsettings'] = 'Default attendance signin sheet settings';
 $string['signinsheetdefaultsettings_help'] = 'The values you set here are used as default values for the settings of new attendance signin sheets.';
+$string['signinsheetfileprefixparticipants'] = 'participants_list';
 $string['signinsheetforthecourse'] = 'Sign-in sheet for the course';
 $string['signinsheetgenerate'] = 'Generate signin sheet';
 $string['signinsheetinvalidformula'] = 'Invalid formula for user identification. The formula must have the form <prefix>[<#digits>]<suffix>=<db-field&>.';
 $string['signinsheetinvalidnumberofdigits'] = 'Invalid number of digits used. Only 1 up to 9 digit(s) are allowed.';
 $string['signinsheetinvaliduserfield'] = 'Invalid field of the user table used.';
+$string['signinsheetlecturer'] = 'Lecturer';
+$string['signinsheetpdferror'] = 'The PDF form for the list of participants {$a} could not be created. The list may be empty.';
+$string['signinsheetpdfdownload'] = 'Download PDF file \'{$a}\'';
 $string['signinsheetuseridentification'] = 'User identification';
 $string['somedisabledstatus'] = '(Some options have been removed as the session has started.)';
 $string['sortedgrid'] = 'Sorted grid';
