@@ -199,30 +199,6 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
         $x = $pdf->GetX();
         $y = $pdf->GetY();
 
-        // Print barcode.
-        $value = substr('000000000000000000000000'.base_convert($participant->id, 10, 2), -25);
-        $y = $pdf->GetY() - 3.5;
-        // $x = 170;
-        $pdf->Rect($x, $y, 0.2, 3.5, 'F');
-        $pdf->Rect($x, $y, 0.7, 0.2, 'F');
-        $pdf->Rect($x, $y + 3.5, 0.7, 0.2, 'F');
-        $x += 0.7;
-        for ($i = 0; $i < 25; $i++) {
-            if ($value[$i] == '1') {
-                $pdf->Rect($x, $y, 0.7, 3.5, 'F');
-                $pdf->Rect($x, $y, 1.2, 0.2, 'F');
-                $pdf->Rect($x, $y + 3.5, 1.2, 0.2, 'F');
-                $x += 1.2;
-            } else {
-                $pdf->Rect($x, $y, 0.2, 3.5, 'F');
-                $pdf->Rect($x, $y, 0.7, 0.2, 'F');
-                $pdf->Rect($x, $y + 3.5, 0.7, 0.2, 'F');
-                $x += 0.7;
-            }
-        }
-        $pdf->Rect($x, $y, 0.2, 3.7, 'F');
-        $pdf->Rect(15, ($pdf->GetY() + 1), 175, 0.2, 'F');
-
         // Print 4 boxes for P(resent), L(ate), E(xcuse) and A(bsent)
         for ($i = 1; $i <= 4; $i++) {
             // Move the boxes slightly down to align with question number.
@@ -246,7 +222,30 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
         $fullname = $participant->lastname . ', ' . $participant->firstname;
         $pdf->Cell(95, 3.5, $fullname, 0, 0, 'L');
         $pdf->Cell(10, 3.5, '', 0, 1, 'R');
-        
+
+        // Print barcode.
+        $value = substr('000000000000000000000000'.base_convert($participant->id, 10, 2), -25);
+        $y = $pdf->GetY() - 3.5;
+        $x = 170;
+        $pdf->Rect($x, $y, 0.2, 3.5, 'F');
+        $pdf->Rect($x, $y, 0.7, 0.2, 'F');
+        $pdf->Rect($x, $y + 3.5, 0.7, 0.2, 'F');
+        $x += 0.7;
+        for ($i = 0; $i < 25; $i++) {
+            if ($value[$i] == '1') {
+                $pdf->Rect($x, $y, 0.7, 3.5, 'F');
+                $pdf->Rect($x, $y, 1.2, 0.2, 'F');
+                $pdf->Rect($x, $y + 3.5, 1.2, 0.2, 'F');
+                $x += 1.2;
+            } else {
+                $pdf->Rect($x, $y, 0.2, 3.5, 'F');
+                $pdf->Rect($x, $y, 0.7, 0.2, 'F');
+                $pdf->Rect($x, $y + 3.5, 0.7, 0.2, 'F');
+                $x += 0.7;
+            }
+        }
+        $pdf->Rect($x, $y, 0.2, 3.7, 'F');
+        $pdf->Rect(15, ($pdf->GetY() + 1), 175, 0.2, 'F');
         if ($position % NUMBERS_PER_PAGE != 0) {
             $pdf->Ln(3.6);
         } else {
