@@ -76,7 +76,7 @@ if (!empty($pageparams->grouptype) && !array_key_exists($pageparams->grouptype, 
      throw new moodle_exception('cannottakeforgroup', 'attendance', '', $group->name);
 }
 
-$thispageurl = $att->url_generate();
+$thispageurl = $att->url_signinsheets();
 $PAGE->set_url($thispageurl);
 $PAGE->set_title($course->shortname. ": ".$att->name);
 $PAGE->set_heading($course->fullname);

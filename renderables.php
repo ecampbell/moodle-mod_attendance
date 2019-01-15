@@ -124,6 +124,16 @@ class attendance_tabs implements renderable {
             $toprow[] = new tabobject(self::TAB_TEMPORARYUSERS, $this->att->url_managetemp()->out(),
                             get_string('tempusers', 'attendance'));
         }
+        if (has_capability('mod/attendance:manageattendances', $context)) {
+            $toprow[] = new tabobject(self::TAB_ADD,
+                            $this->att->url_sessions()->out(true,
+                                array('action' => mod_attendance_sessions_page_params::ACTION_DOWNLOAD)),
+                                get_string('signinsheetparticipantsdownload', attendance));
+            $toprow[] = new tabobject(self::TAB_ADD,
+                            $this->att->url_sessions()->out(true,
+                                array('action' => mod_attendance_sessions_page_params::ACTION_UPLOAD)),
+                                get_string('signinsheetparticipantsupload', attendance));
+        }
         if ($this->currenttab == self::TAB_UPDATE && has_capability('mod/attendance:manageattendances', $context)) {
             $toprow[] = new tabobject(self::TAB_UPDATE,
                             $this->att->url_sessions()->out(true,
@@ -321,8 +331,8 @@ class attendance_manage_data implements renderable {
      * @param int $grouptype
      * @return mixed
      */
-    public function url_generate($sessionid, $grouptype) {
-        return url_helpers::url_generate($this->att, $sessionid, $grouptype);
+    public function url_signinsheets($sessionid, $grouptype) {
+        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype);
     }
 
     /**
@@ -902,13 +912,13 @@ class url_helpers {
      * @param int $grouptype
      * @return mixed
      */
-    public static function url_generate($att, $sessionid, $grouptype) {
+    public static function url_signinsheets($att, $sessionid, $grouptype) {
         $params = array('sessionid' => $sessionid);
         if (isset($grouptype)) {
             $params['grouptype'] = $grouptype;
         }
 
-        return $att->url_generate($params);
+        return $att->url_signinsheets($params);
     }
 
     /**

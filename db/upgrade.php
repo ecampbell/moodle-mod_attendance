@@ -401,7 +401,7 @@ function xmldb_attendance_upgrade($oldversion=0) {
                     $DB->execute("DROP INDEX ". $name);
                 }
             }
-            $index = new xmldb_key('level_id', XMLDB_KEY_UNIQUE, array('idnumber, warningpercent', 'warnafter'));
+            $index = new xmldb_index('level_id', XMLDB_KEY_UNIQUE, array('idnumber, warningpercent', 'warnafter'));
             $dbman->add_key($table, $index);
         }
         // Attendance savepoint reached.
@@ -523,6 +523,91 @@ function xmldb_attendance_upgrade($oldversion=0) {
             }
         }
         upgrade_mod_savepoint(true, 2018051402, 'attendance');
+    }
+
+    if ($oldversion < 2019011500) {
+        $table = new xmldb_table('attendance_ss_page_corners');
+        if (!$dbman->table_exists($table)) {
+            // Contains the four corners for every page in signinsheet_scanned_pages.
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10',  XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('scannedpageid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the scanned page the corners belong to.
+            $table->add_field('x', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null, null); // The x coordinate of the corner.
+            $table->add_field('y', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null, null); // The y coordinate of the corner.
+            $table->add_field('position', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The position of the corner (1 ->topleft, 2->topright, 3->bottomleft, 4->bottomright).
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+            $dbman->create_table($table);
+
+            $index = new xmldb_index('ss_page_corners_scannedpageid_idx', XMLDB_INDEX_NOTUNIQUE, array('scannedpageid')); // index for faster searching the corners of a scannedpage.
+            $dbman->add_index($table, $index);
+        }
+        $table = new xmldb_table('attendance_ss_p_lists');
+        if (!$dbman->table_exists($table)) {
+            // Lists for participants.
+
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('signinsheetid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
+            $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+            $table->add_field('number', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1'); // The number of the list.
+            $table->add_field('filename', XMLDB_TYPE_CHAR, '1000', null, null, null, null); // The id of the PDF file in the files table.
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+            $dbman->create_table($table);
+
+            $index = new xmldb_index('signinsheetid', XMLDB_INDEX_NOTUNIQUE, array('signinsheetid'));
+            $dbman->add_index($table, $index);
+        }
+        $table = new xmldb_table('attendance_ss_participants');
+        if (!$dbman->table_exists($table)) {
+            // Checklist for the participants of an signinsheet.
+
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('listid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null);
+            $table->add_field('checked', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null);
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+            $dbman->create_table($table);
+
+            $index = new xmldb_index('listid', XMLDB_INDEX_NOTUNIQUE, array('listid'));
+            $dbman->add_index($table, $index);
+        }
+        $table = new xmldb_table('attendance_ss_scanned_pages');
+        if (!$dbman->table_exists($table)) {
+            // Stores information about scanned participants-list-pages.
+
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('signinsheetid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the signinsheet the page belongs to.
+            $table->add_field('listnumber', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, null, null, null); // The number of the list.
+            $table->add_field('filename', XMLDB_TYPE_CHAR, '1000', null, null, null, null); // The ID of the image file in the files table.
+            $table->add_field('time', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0'); // The time the page was scanned.
+            $table->add_field('status', XMLDB_TYPE_TEXT, 'small', null, XMLDB_NOTNULL, null); // The status of the page.
+            $table->add_field('error', XMLDB_TYPE_TEXT, 'small', null, null, null, null); // The error of the page if status == error.
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+            $dbman->create_table($table);
+
+        }
+        $table = new xmldb_table('attendance_ss_p_choices');
+        if (!$dbman->table_exists($table)) {
+            // The table contains the choices made on scanned lists of participants.
+
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('scannedppageid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the corresponding page in signinsheet_scanned_pages.
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, null); // The ID of the user as recognised from the bar code.
+            $table->add_field('value', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0'); // The value of the  choice (1, 0, -1). -1 stands for insecure markings.
+
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+            $dbman->create_table($table);
+        }
+
+        // Attendance savepoint reached.
+        upgrade_mod_savepoint(true, 2019011500, 'attendance');
     }
 
     return $result;

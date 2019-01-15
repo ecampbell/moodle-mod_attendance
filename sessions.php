@@ -216,6 +216,10 @@ switch ($att->pageparams->action) {
         echo $OUTPUT->confirm($message, $att->url_sessions($params), $att->url_manage());
         echo $OUTPUT->footer();
         exit;
+    case mod_attendance_sessions_page_params::ACTION_DOWNLOAD:
+
+        $currenttab = attendance_tabs::TAB_UPDATE;
+        break;
 }
 
 $output = $PAGE->get_renderer('mod_attendance');

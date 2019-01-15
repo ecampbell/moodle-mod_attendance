@@ -61,6 +61,11 @@ class mod_attendance_sessions_page_params {
      */
     const ACTION_DELETE_HIDDEN     = 6;
 
+    /** Download */
+    const ACTION_DOWNLOAD         = 7;
+    /** Upload */
+    const ACTION_UPLOAD           = 8;
+
     /** @var int view mode of taking attendance page*/
     public $action;
 }
