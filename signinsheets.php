@@ -26,7 +26,6 @@ require_once(dirname(__FILE__).'/../../config.php');
 require_once(dirname(__FILE__).'/locallib.php');
 require_once(dirname(__FILE__).'/signinsheetpdf.php');
 
-require_once($CFG->dirroot . '/mod/attendlocallib.php');
 require_once(dirname(__FILE__) . '/signinsheetevallib.php');
 require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_listform.php');
 require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_uploadform.php');
@@ -36,7 +35,8 @@ require_once($CFG->dirroot . '/mod/offlinequiz/participants/participants_scanner
 $pageparams = new mod_attendance_take_page_params();
 
 $id                     = required_param('id', PARAM_INT);
-$pageparams->sessionid  = required_param('sessionid', PARAM_INT);
+// $pageparams->sessionid  = required_param('sessionid', PARAM_INT);
+$pageparams->sessionid  = optional_param('sessionid', null, PARAM_INT);
 $pageparams->grouptype  = required_param('grouptype', PARAM_INT);
 $pageparams->sort       = optional_param('sort', ATT_SORT_DEFAULT, PARAM_INT);
 $pageparams->copyfrom   = optional_param('copyfrom', null, PARAM_INT);

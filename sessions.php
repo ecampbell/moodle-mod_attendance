@@ -217,8 +217,20 @@ switch ($att->pageparams->action) {
         echo $OUTPUT->footer();
         exit;
     case mod_attendance_sessions_page_params::ACTION_DOWNLOAD:
+        // $sessionid = required_param('sessionid', PARAM_INT);
 
-        $currenttab = attendance_tabs::TAB_UPDATE;
+        $url = $att->url_sessions(array('action' => mod_attendance_sessions_page_params::ACTION_DOWNLOAD, 'sessionid' => $sessionid));
+        $formparams['sessionid'] = $sessionid;
+
+        $currenttab = attendance_tabs::TAB_DOWNLOAD;
+        break;
+    case mod_attendance_sessions_page_params::ACTION_UPLOAD:
+        // $sessionid = required_param('sessionid', PARAM_INT);
+
+        $url = $att->url_sessions(array('action' => mod_attendance_sessions_page_params::ACTION_UPLOAD, 'sessionid' => $sessionid));
+        $formparams['sessionid'] = $sessionid;
+
+        $currenttab = attendance_tabs::TAB_UPLOAD;
         break;
 }
 

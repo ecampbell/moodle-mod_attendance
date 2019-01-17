@@ -55,6 +55,10 @@ class attendance_tabs implements renderable {
     const TAB_WARNINGS = 8;
     /** Absentee tab */
     const TAB_ABSENTEE      = 9;
+    /** Download signinsheets tab */
+    const TAB_DOWNLOAD      = 10;
+    /** Upload signinsheets tab */
+    const TAB_UPLOAD      = 11;
     /** @var int current tab */
     public $currenttab;
 
@@ -124,15 +128,15 @@ class attendance_tabs implements renderable {
             $toprow[] = new tabobject(self::TAB_TEMPORARYUSERS, $this->att->url_managetemp()->out(),
                             get_string('tempusers', 'attendance'));
         }
-        if (has_capability('mod/attendance:manageattendances', $context)) {
-            $toprow[] = new tabobject(self::TAB_ADD,
-                            $this->att->url_sessions()->out(true,
+        if (has_capability('mod/attendance:signinsheets', $context)) {
+            $toprow[] = new tabobject(self::TAB_DOWNLOAD,
+                            $this->att->url_signinsheets()->out(true,
                                 array('action' => mod_attendance_sessions_page_params::ACTION_DOWNLOAD)),
-                                get_string('signinsheetparticipantsdownload', attendance));
-            $toprow[] = new tabobject(self::TAB_ADD,
-                            $this->att->url_sessions()->out(true,
+                                get_string('signinsheetparticipantsdownload', 'attendance'));
+            $toprow[] = new tabobject(self::TAB_UPLOAD,
+                            $this->att->url_signinsheets()->out(true,
                                 array('action' => mod_attendance_sessions_page_params::ACTION_UPLOAD)),
-                                get_string('signinsheetparticipantsupload', attendance));
+                                get_string('signinsheetparticipantsupload', 'attendance'));
         }
         if ($this->currenttab == self::TAB_UPDATE && has_capability('mod/attendance:manageattendances', $context)) {
             $toprow[] = new tabobject(self::TAB_UPDATE,

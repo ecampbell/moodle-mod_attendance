@@ -441,9 +441,9 @@ class mod_attendance_structure {
      * @param array $params
      * @return moodle_url of attendances.php for attendance instance
      */
-    public function url_generate($params=array()) {
+    public function url_signinsheets($params=array()) {
         $params = array_merge(array('id' => $this->cm->id), $params);
-        return new moodle_url('/mod/attendance/generatesheet.php', $params);
+        return new moodle_url('/mod/attendance/signinsheets.php', $params);
     }
 
     /**
