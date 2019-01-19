@@ -56,7 +56,7 @@ class attendance_tabs implements renderable {
     /** Absentee tab */
     const TAB_ABSENTEE      = 9;
     /** Download signinsheets tab */
-    const TAB_DOWNLOAD      = 10;
+    const TAB_MANAGE      = 10;
     /** Upload signinsheets tab */
     const TAB_UPLOAD      = 11;
     /** @var int current tab */
@@ -129,7 +129,7 @@ class attendance_tabs implements renderable {
                             get_string('tempusers', 'attendance'));
         }
         if (has_capability('mod/attendance:signinsheets', $context)) {
-            $toprow[] = new tabobject(self::TAB_DOWNLOAD,
+            $toprow[] = new tabobject(self::TAB_MANAGE,
                             $this->att->url_signinsheets()->out(true,
                                 array('action' => mod_attendance_sessions_page_params::ACTION_MANAGE)),
                                 get_string('signinsheetparticipantsmanage', 'attendance'));
@@ -333,11 +333,11 @@ class attendance_manage_data implements renderable {
      * Helper function to return urls.
      * @param int $sessionid
      * @param int $grouptype
-     * @param int $download
+     * @param int $action
      * @return mixed
      */
-    public function url_signinsheets($sessionid, $grouptype, $download = 0) {
-        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $download);
+    public function url_signinsheets($sessionid, $grouptype, $action) {
+        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $action);
     }
 
     /**
@@ -915,16 +915,17 @@ class url_helpers {
      * @param stdClass $att
      * @param int $sessionid
      * @param int $grouptype
-     * @param int $download
+     * @param int $action
      * @return mixed
      */
-    public static function url_signinsheets($att, $sessionid, $grouptype, $download = 0) {
+    public static function url_signinsheets($att, $sessionid, $grouptype, $action) {
         $params = array('sessionid' => $sessionid);
         if (isset($grouptype)) {
             $params['grouptype'] = $grouptype;
         }
-        if (isset($download)) {
-            $params['download'] = $download;
+        if (isset($action)) {
+            $params['action'] = $action;
+            $params['download'] = true;
         }
 
         return $att->url_signinsheets($params);

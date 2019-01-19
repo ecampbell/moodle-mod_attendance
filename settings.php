@@ -167,6 +167,7 @@ if ($ADMIN->fulltree) {
         get_string('emailcontent', 'attendance'), get_string('emailcontent_help', 'attendance'),
         get_string('emailcontent_default', 'attendance'), PARAM_RAW));
 
+    // Signin sheets settings.
     // Introductory explanation that all the settings are defaults for the add attendance form Signin Sheet group.
     $name = new lang_string('signinsheetdefaultsettings', 'mod_attendance');
     $description = new lang_string('signinsheetdefaultsettings_help', 'mod_attendance');
@@ -176,4 +177,22 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext_signinsheet_user_formula('attendance/signinsheetuseridentification',
             get_string('signinsheetuseridentification', 'attendance'), get_string('signinsheetconfiguseridentification', 'attendance'),
             '[7]=idnumber' , PARAM_RAW, 30));
+
+    // Logo image URL setting.
+    $settings->add(new admin_setting_configtext('attendance/logourl', get_string('signinsheetlogourl', 'attendance'),
+            get_string('signinsheetlogourldesc', 'attendance'), '', PARAM_URL));
+
+    // Scanning options: White value of paper.
+    $settings->add(new admin_setting_heading('scanningheading',
+            get_string('signinsheetscanningoptionsheading', 'attendance'), ''));
+
+    $options = array();
+    $options[610] = get_string('signinsheetdarkgray', 'attendance');
+    $options[640] = get_string('signinsheetlightgray', 'attendance');
+    $options[670] = get_string('signinsheetstandard', 'attendance');
+    $options[680] = get_string('signinsheetwhite', 'attendance');
+    $options[700] = get_string('signinsheetpearlywhite', 'attendance');
+
+    $settings->add(new admin_setting_configselect('attendance/papergray', get_string('signinsheetpapergray', 'attendance'),
+            get_string('signinsheetconfigpapergray', 'attendance'), 670, $options));
 }

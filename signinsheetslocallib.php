@@ -806,8 +806,8 @@ function signinsheet_get_js_module() {
             'requires' => array('base', 'dom', 'event-delegate', 'event-key',
                     'core_question_engine'),
             'strings' => array(
-                    array('timesup', 'signinsheet'),
-                    array('functiondisabledbysecuremode', 'signinsheet'),
+                    array('timesup', 'attendance'),
+                    array('functiondisabledbysecuremode', 'attendance'),
                     array('flagged', 'question'),
             ),
     );
@@ -1150,11 +1150,11 @@ function signinsheet_question_preview_button($signinsheet, $question, $label = f
     // Do we want a label?
     $strpreviewlabel = '';
     if ($label) {
-        $strpreviewlabel = get_string('preview', 'signinsheet');
+        $strpreviewlabel = get_string('preview', 'attendance');
     }
 
     // Build the icon.
-    $strpreviewquestion = get_string('previewquestion', 'signinsheet');
+    $strpreviewquestion = get_string('previewquestion', 'attendance');
     $image = $OUTPUT->pix_icon('t/preview', $strpreviewquestion);
 
     $action = new popup_action('click', $url, 'questionpreview',
@@ -1212,7 +1212,7 @@ function signinsheet_get_group_template_usage($signinsheet, $group, $context) {
         $templateusage->set_preferred_behaviour('immediatefeedback');
 
         if (!$questionids) {
-            print_error(get_string('noquestionsfound', 'signinsheet'), 'view.php?q='.$signinsheet->id);
+            print_error(get_string('noquestionsfound', 'attendance'), 'view.php?q='.$signinsheet->id);
         }
 
         // Gets database raw data for the questions.
@@ -1341,7 +1341,7 @@ function signinsheet_print_question_preview($question, $choiceorder, $number, $c
 
     $text = question_rewrite_question_preview_urls($question->questiontext, $question->id,
             $question->contextid, 'question', 'questiontext', $question->id,
-            $context->id, 'signinsheet');
+            $context->id, 'attendance');
 
     // Remove leading paragraph tags because the cause a line break after the question number.
     $text = preg_replace('!^<p>!i', '', $text);
@@ -1413,7 +1413,7 @@ function signinsheet_print_question_preview($question, $choiceorder, $number, $c
 function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemcontext) {
     global $CFG, $COURSE, $DB, $OUTPUT;
     signinsheet_load_useridentification();
-    $signinsheetconfig = get_config('signinsheet');
+    $signinsheetconfig = get_config('attendance');
 
     if (!$course = $DB->get_record('course', array('id' => $coursecontext->instanceid))) {
         print_error('invalid course');
@@ -1488,8 +1488,8 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     // Define table columns.
     $tablecolumns = array('checkbox', 'picture', 'fullname', $signinsheetconfig->ID_field, 'number', 'attempt', 'checked');
     $tableheaders = array('<input type="checkbox" name="toggle" class="select-all-checkbox"/>',
-            '', get_string('fullname'), get_string($signinsheetconfig->ID_field), get_string('participantslist', 'signinsheet'),
-            get_string('attemptexists', 'signinsheet'), get_string('present', 'signinsheet'));
+            '', get_string('fullname'), get_string($signinsheetconfig->ID_field), get_string('participantslist', 'attendance'),
+            get_string('attemptexists', 'attendance'), get_string('present', 'attendance'));
 
     $table->define_columns($tablecolumns);
     $table->define_headers($tableheaders);
@@ -1542,7 +1542,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
         $participants = $DB->get_records_sql($sql, $params, $table->get_page_start(), $table->get_page_size());
     }
 
-    $strreallydel  = addslashes(get_string('deletepartcheck', 'signinsheet'));
+    $strreallydel  = addslashes(get_string('deletepartcheck', 'attendance'));
 
     $sql = "SELECT COUNT(*)
               FROM {signinsheet_results}
@@ -1570,11 +1570,11 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
                     $participant->{$signinsheetconfig->ID_field},
                     $lists[$participant->listid]->name,
                     $attempt ? "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/tick.gif\" alt=\"" .
-                    get_string('attemptexists', 'signinsheet') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
-                    get_string('noattemptexists', 'signinsheet') . "\">",
+                    get_string('attemptexists', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
+                    get_string('noattemptexists', 'attendance') . "\">",
                     $participant->checked ? "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/tick.gif\" alt=\"" .
-                    get_string('ischecked', 'signinsheet') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
-                    get_string('isnotchecked', 'signinsheet') . "\">"
+                    get_string('ischecked', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
+                    get_string('isnotchecked', 'attendance') . "\">"
                     );
             switch ($checkoption) {
                 case '0':
@@ -1609,9 +1609,9 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
         echo '<input type="hidden" name="listid" value="' . $listid . '" />';
         echo '<table class="boxaligncenter"><tr><td>';
         $options = array(
-                'Excel' => get_string('excelformat', 'signinsheet'),
-                'ODS' => get_string('odsformat', 'signinsheet'),
-                'CSV' => get_string('csvformat', 'signinsheet')
+                'Excel' => get_string('excelformat', 'attendance'),
+                'ODS' => get_string('odsformat', 'attendance'),
+                'CSV' => get_string('csvformat', 'attendance')
         );
         print_string('downloadresultsas', 'signinsheet');
         echo "</td><td>";
@@ -1635,7 +1635,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     echo '<input type="hidden" name="listid" value="'.$listid.'" />';
     echo '<table id="participant-options" class="boxaligncenter">';
     echo '<tr align="left">';
-    echo '<td><label for="pagesize">'.get_string('pagesizeparts', 'signinsheet').'</label></td>';
+    echo '<td><label for="pagesize">'.get_string('pagesizeparts', 'attendance').'</label></td>';
     echo '<td><input type="text" id="pagesize" name="pagesize" size="3" value="'.$pagesize.'" /></td>';
     echo '</tr>';
     echo '<tr align="left">';
@@ -1643,8 +1643,8 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
 
     $options = array(0 => get_string('showallparts', 'signinsheet', $total));
     if ($course->id != SITEID) {
-        $options[1] = get_string('showmissingattemptonly', 'signinsheet');
-        $options[2] = get_string('showmissingcheckonly', 'signinsheet');
+        $options[1] = get_string('showmissingattemptonly', 'attendance');
+        $options[2] = get_string('showmissingcheckonly', 'attendance');
     }
 
     echo html_writer::select($options, 'checkoption', $checkoption);
@@ -1670,9 +1670,9 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
     global $CFG, $DB, $COURSE;
 
     signinsheet_load_useridentification();
-    $signinsheetconfig = get_config('signinsheet');
+    $signinsheetconfig = get_config('attendance');
 
-    $filename = clean_filename(get_string('participants', 'signinsheet') . $signinsheet->id);
+    $filename = clean_filename(get_string('participants', 'attendance') . $signinsheet->id);
 
     // First get roleids for students from leagcy.
     if (!$roles = get_roles_with_capability('mod/signinsheet:attempt', CAP_ALLOW, $systemcontext)) {
@@ -1707,9 +1707,9 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
     // Define table headers.
     $tableheaders = array(get_string('fullname'),
                           get_string($signinsheetconfig->ID_field),
-                          get_string('participantslist', 'signinsheet'),
-                          get_string('attemptexists', 'signinsheet'),
-                          get_string('present', 'signinsheet'));
+                          get_string('participantslist', 'attendance'),
+                          get_string('attemptexists', 'attendance'),
+                          get_string('present', 'attendance'));
 
     if ($fileformat == 'ODS') {
         require_once("$CFG->libdir/odslib.class.php");
@@ -1720,7 +1720,7 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
         // Sending HTTP headers.
         $workbook->send($filename);
         // Creating the first worksheet.
-        $sheettitle = get_string('participants', 'signinsheet');
+        $sheettitle = get_string('participants', 'attendance');
         $myxls = $workbook->add_worksheet($sheettitle);
         // Format types.
         $format = $workbook->add_format();
@@ -1759,7 +1759,7 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
         // Sending HTTP headers.
         $workbook->send($filename);
         // Creating the first worksheet.
-        $sheettitle = get_string('participants', 'signinsheet');
+        $sheettitle = get_string('participants', 'attendance');
         $myxls = $workbook->add_worksheet($sheettitle);
         // Format types.
         $format = $workbook->add_format();
@@ -1893,7 +1893,7 @@ function signinsheet_question_tostring($question, $showicon = false,
             $result .= $questiontext;
         } else {
             $result .= '<span class="error">';
-            $result .= get_string('questiontextisempty', 'signinsheet');
+            $result .= get_string('questiontextisempty', 'attendance');
             $result .= '</span>';
         }
         $result .= '</span>';

@@ -437,8 +437,9 @@ $string['showextrauserdetails'] = 'Show extra user details';
 $string['showsessiondetails'] = 'Show session details';
 $string['showsessiondescriptiononreport'] = 'Show session description in report';
 $string['showsessiondescriptiononreport_desc'] = 'Show the session description in the attendance report listing.';
+
 $string['signinsheetconfiguseridentification'] = 'A formula describing the user identification. This formula is used to assign answer forms to users in the system. The right hand side of the equation must denote a field in the user table of Moodle.';
-$string['signinsheetcreatepdfsparticipants'] = 'PDF file for list of participants';
+$string['signinsheetcreatelistfirst'] = 'Add participants signin sheets';
 $string['signinsheetdefaultsettings'] = 'Default attendance signin sheet settings';
 $string['signinsheetdefaultsettings_help'] = 'The values you set here are used as default values for the settings of new attendance signin sheets.';
 $string['signinsheetfileprefixparticipants'] = 'participants_list';
@@ -452,12 +453,28 @@ $string['signinsheetparticipants'] = 'Participants';
 $string['signinsheetparticipantsmanage'] = 'Manage Signin sheets';
 $string['signinsheetparticipantsupload'] = 'Upload Signin sheets';
 $string['signinsheetparticipantsinlists'] = 'Participants in lists';
-$string['signinsheetparticipants_help'] = '<p>Lists of participants are designed for large classes with many participants. They help the teacher to check which students attended.
+$string['signinsheetparticipantsfiles'] = 'PDF files for list of participants';
+$string['signinsheetparticipantsfiles_help'] = '<p>Lists of participants are designed for large classes with many participants. They help the teacher to check which students attended.
 Lists of participants can be downloaded as PDF documents, printed and marked with crosses just like a school roll book. Afterwards they can be uploaded and the marked students will be marked as present in the database.
 Please avoid spots on the barcodes as they are used to identify the students.</p>';
 $string['signinsheetpdferror'] = 'The PDF form for the list of participants {$a} could not be created. The list may be empty.';
 $string['signinsheetpdfdownload'] = 'Download PDF file \'{$a}\'';
+$string['signinsheetreallydeleteupdatepdf'] = 'Do you really want to delete and update the participants list PDF files?';
 $string['signinsheetuseridentification'] = 'User identification';
+
+$string['signinsheetconfigpapergray'] = 'white-value of paper, which is used for the evaluation of answer-sheets';
+$string['signinsheetdarkgray'] = 'Dark grey';
+$string['signinsheetlightgray'] = 'Light grey';
+$string['signinsheetpapergray'] = 'White value of paper';
+$string['signinsheetstandard'] = 'Standard';
+$string['signinsheetpearlywhite'] = 'Pearly white';
+$string['signinsheetwhite'] = 'White';
+$string['signinsheetscanningoptionsheading'] = 'Scanning options';
+$string['signinsheetscanneroptions'] = 'Scanner settings';
+$string['signinsheetlogourl'] = 'Logo URL';
+$string['signinsheetlogourldesc'] = 'URL of an image file that is displayed on the top right corner of signin sheets, i.e. <b>http://www.yoursite.tld/mylogo.png</b> or <b>../path/to/your/logo.png</b>. The maximum allowed size is 520x140 pixels. Signin sheets cannot be processed if the image exceeds the maximum size!';
+
+$string['privacy:metadata:attendance:signinsheetpapergray'] = 'The grayscale of this attendance';
 $string['somedisabledstatus'] = '(Some options have been removed as the session has started.)';
 $string['sortedgrid'] = 'Sorted grid';
 $string['sortedlist'] = 'Sorted list';
