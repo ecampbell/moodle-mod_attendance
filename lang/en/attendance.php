@@ -449,8 +449,8 @@ $string['signinsheetinvalidnumberofdigits'] = 'Invalid number of digits used. On
 $string['signinsheetinvaliduserfield'] = 'Invalid field of the user table used.';
 $string['signinsheetlecturer'] = 'Lecturer';
 $string['signinsheetparticipants'] = 'Participants';
-$string['signinsheetparticipantsdownload'] = 'Download Participants';
-$string['signinsheetparticipantsupload'] = 'Upload Participants';
+$string['signinsheetparticipantsmanage'] = 'Manage Signin sheets';
+$string['signinsheetparticipantsupload'] = 'Upload Signin sheets';
 $string['signinsheetparticipantsinlists'] = 'Participants in lists';
 $string['signinsheetparticipants_help'] = '<p>Lists of participants are designed for large classes with many participants. They help the teacher to check which students attended.
 Lists of participants can be downloaded as PDF documents, printed and marked with crosses just like a school roll book. Afterwards they can be uploaded and the marked students will be marked as present in the database.

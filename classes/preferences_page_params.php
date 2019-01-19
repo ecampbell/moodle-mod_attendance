@@ -40,10 +40,6 @@ class mod_attendance_preferences_page_params {
     const ACTION_SHOW             = 4;
     /** Save */
     const ACTION_SAVE             = 5;
-    /** Download */
-    const ACTION_DOWNLOAD         = 7;
-    /** Upload */
-    const ACTION_UPLOAD           = 8;
 
     /** @var int view mode of taking attendance page*/
     public $action;

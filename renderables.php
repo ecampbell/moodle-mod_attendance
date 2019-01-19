@@ -131,8 +131,8 @@ class attendance_tabs implements renderable {
         if (has_capability('mod/attendance:signinsheets', $context)) {
             $toprow[] = new tabobject(self::TAB_DOWNLOAD,
                             $this->att->url_signinsheets()->out(true,
-                                array('action' => mod_attendance_sessions_page_params::ACTION_DOWNLOAD)),
-                                get_string('signinsheetparticipantsdownload', 'attendance'));
+                                array('action' => mod_attendance_sessions_page_params::ACTION_MANAGE)),
+                                get_string('signinsheetparticipantsmanage', 'attendance'));
             $toprow[] = new tabobject(self::TAB_UPLOAD,
                             $this->att->url_signinsheets()->out(true,
                                 array('action' => mod_attendance_sessions_page_params::ACTION_UPLOAD)),
@@ -333,10 +333,11 @@ class attendance_manage_data implements renderable {
      * Helper function to return urls.
      * @param int $sessionid
      * @param int $grouptype
+     * @param int $download
      * @return mixed
      */
-    public function url_signinsheets($sessionid, $grouptype) {
-        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype);
+    public function url_signinsheets($sessionid, $grouptype, $download = 0) {
+        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $download);
     }
 
     /**
@@ -914,12 +915,16 @@ class url_helpers {
      * @param stdClass $att
      * @param int $sessionid
      * @param int $grouptype
+     * @param int $download
      * @return mixed
      */
-    public static function url_signinsheets($att, $sessionid, $grouptype) {
+    public static function url_signinsheets($att, $sessionid, $grouptype, $download = 0) {
         $params = array('sessionid' => $sessionid);
         if (isset($grouptype)) {
             $params['grouptype'] = $grouptype;
+        }
+        if (isset($download)) {
+            $params['download'] = $download;
         }
 
         return $att->url_signinsheets($params);
