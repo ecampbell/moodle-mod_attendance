@@ -342,6 +342,13 @@ class mod_attendance_renderer extends plugin_renderer_base {
                 $title = get_string('takeattendance', 'attendance');
                 $actions .= $this->output->action_icon($url, new pix_icon('t/go', $title));
             }
+            if (has_capability('mod/attendance:takeattendances', $sessdata->att->context)) {
+            // if (has_capability('mod/attendance:signinsheets', $sessdata->att->context)) {
+                $url = $sessdata->url_signinsheets($sess->id, $sess->groupid, mod_attendance_sessions_page_params::ACTION_DOWNLOAD);
+                $title = get_string('signinsheetgenerate', 'attendance');
+                $actions .= $this->output->action_icon($url, new pix_icon('t/print', $title));
+            }
+
         }
 
         if (has_capability('mod/attendance:manageattendances', $sessdata->att->context)) {
@@ -1135,6 +1142,17 @@ class mod_attendance_renderer extends plugin_renderer_base {
                     'grouptype' => $sess->groupid);
                 $url = new moodle_url('/mod/attendance/take.php', $params);
                 $icon = $OUTPUT->pix_icon('redo', get_string('changeattendance', 'attendance'), 'attendance');
+                $row->cells[] = html_writer::link($url, $icon);
+            }
+
+            if (has_capability('mod/attendance:signinsheets', $context)) {
+                $params = array('id' => $userdata->filtercontrols->cm->id,
+                    'sessionid' => $sess->id,
+                    'grouptype' => $sess->groupid,
+                    'action' => mod_attendance_preferences_page_params::ACTION_DOWNLOAD,
+                    'mode' => 'createpdfs');
+                $url = new moodle_url('/mod/attendance/signinsheets.php', $params);
+                $icon = $OUTPUT->pix_icon('print', get_string('signinsheetgenerate', 'attendance'));
                 $row->cells[] = html_writer::link($url, $icon);
             }
 

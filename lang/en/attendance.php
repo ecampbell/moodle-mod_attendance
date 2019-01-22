@@ -439,10 +439,58 @@ $string['setunmarked_help'] = 'If enabled in the session, set this status if a s
 $string['showdefaults'] = 'Show defaults';
 $string['showduration'] = 'Show duration';
 $string['showextrauserdetails'] = 'Show extra user details';
-$string['showqrcode'] = 'Show QR Code';
 $string['showsessiondetails'] = 'Show session details';
 $string['showsessiondescriptiononreport'] = 'Show session description in report';
 $string['showsessiondescriptiononreport_desc'] = 'Show the session description in the attendance report listing.';
+
+$string['signinsheetconfiguseridentification'] = 'A formula describing the user identification. This formula is used to assign answer forms to users in the system. The right hand side of the equation must denote a field in the user table of Moodle.';
+$string['signinsheetcreatelistfirst'] = 'Add participants signin sheets';
+$string['signinsheetdefaultsettings'] = 'Default attendance signin sheet settings';
+$string['signinsheetdefaultsettings_help'] = 'The values you set here are used as default values for the settings of new attendance signin sheets.';
+$string['signinsheetfileprefixparticipants'] = 'participants_list';
+$string['signinsheetforthecourse'] = 'Sign-in sheet for the course';
+$string['signinsheetgenerate'] = 'Generate signin sheet';
+$string['signinsheetinvalidformula'] = 'Invalid formula for user identification. The formula must have the form <prefix>[<#digits>]<suffix>=<db-field&>.';
+$string['signinsheetinvalidnumberofdigits'] = 'Invalid number of digits used. Only 1 up to 9 digit(s) are allowed.';
+$string['signinsheetinvaliduserfield'] = 'Invalid field of the user table used.';
+$string['signinsheetlecturer'] = 'Lecturer';
+$string['signinsheetparticipants'] = 'Participants';
+$string['signinsheetparticipants_help'] = '<p>Lists of participants are designed for large classes with many students. They help the teacher to check which students participated in the class.
+You can add users to different lists. Each list could, for instance, contain the participants in a particular room. The participants can be members of a special group. A group registration tool can be used for creating those groups.
+Lists of participants can be downloaded as PDF documents, printed and marked with crosses. Afterwards they can be uploaded and the marked students will be marked as present in the database.
+Please avoid spots on the barcodes as they are used to identify the students.</p>';
+$string['signinsheetparticipantsimportnew'] = 'Uploading lists of participants';
+$string['signinsheetparticipantsimportnew_help'] = '<p>
+In this tab you can upload the filled-in lists of participants. You can upload single scanned image files or several scanned image files in a ZIP-archive. The offline quiz module will process the image files in the background.
+File names are not relevant but should not contain special characters such as umlauts. Images should be GIFs, PNGs
+or TIFs. A resolution between 200 and 300dpi is recommended.</p>';
+$string['signinsheetparticipantsmanage'] = 'Manage Signin sheets';
+$string['signinsheetparticipantsupload'] = 'Upload Signin sheets';
+$string['signinsheetparticipantsinlists'] = 'Participants in lists';
+$string['signinsheetparticipantsfiles'] = 'PDF files for list of participants';
+$string['signinsheetparticipantsfiles_help'] = '<p>Lists of participants are designed for large classes with many participants. They help the teacher to check which students attended.
+Lists of participants can be downloaded as PDF documents, printed and marked with crosses just like a school roll book. Afterwards they can be uploaded and the marked students will be marked as present in the database.
+Please avoid spots on the barcodes as they are used to identify the students.</p>';
+$string['signinsheetpdferror'] = 'The PDF form for the list of participants {$a} could not be created. The list may be empty.';
+$string['signinsheetpdfdownload'] = 'Download PDF file \'{$a}\'';
+$string['signinsheetreallydeleteupdatepdf'] = 'Do you really want to delete and update the participants list PDF files?';
+$string['signinsheetuseridentification'] = 'User identification';
+
+$string['signinsheetconfigpapergray'] = 'white-value of paper, which is used for the evaluation of answer-sheets';
+$string['signinsheetdarkgray'] = 'Dark grey';
+$string['signinsheetlightgray'] = 'Light grey';
+$string['signinsheetpapergray'] = 'White value of paper';
+$string['signinsheetstandard'] = 'Standard';
+$string['signinsheetpearlywhite'] = 'Pearly white';
+$string['signinsheetwhite'] = 'White';
+$string['signinsheetscanningoptionsheading'] = 'Scanning options';
+$string['signinsheetscanneroptions'] = 'Scanner settings';
+$string['signinsheetlogourl'] = 'Logo URL';
+$string['signinsheetlogourldesc'] = 'URL of an image file that is displayed on the top right corner of signin sheets, i.e. <b>http://www.yoursite.tld/mylogo.png</b> or <b>../path/to/your/logo.png</b>. The maximum allowed size is 520x140 pixels. Signin sheets cannot be processed if the image exceeds the maximum size!';
+$string['signinsheetuploadparticipants'] = 'Upload/Correct lists of participants';
+$string['signinsheetupload'] = 'Upload/Correct';
+
+$string['privacy:metadata:attendance:signinsheetpapergray'] = 'The grayscale of this attendance';
 $string['somedisabledstatus'] = '(Some options have been removed as the session has started.)';
 $string['sortedgrid'] = 'Sorted grid';
 $string['sortedlist'] = 'Sorted list';

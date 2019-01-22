@@ -437,6 +437,16 @@ class mod_attendance_structure {
     }
 
     /**
+     * Get signin sheet url.
+     * @param array $params
+     * @return moodle_url of attendances.php for attendance instance
+     */
+    public function url_signinsheets($params=array()) {
+        $params = array_merge(array('id' => $this->cm->id), $params);
+        return new moodle_url('/mod/attendance/signinsheets.php', $params);
+    }
+
+    /**
      * Get view url.
      * @param array $params
      * @return moodle_url

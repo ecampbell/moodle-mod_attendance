@@ -55,6 +55,10 @@ class attendance_tabs implements renderable {
     const TAB_WARNINGS = 8;
     /** Absentee tab */
     const TAB_ABSENTEE      = 9;
+    /** Download signinsheets tab */
+    const TAB_MANAGE      = 10;
+    /** Upload signinsheets tab */
+    const TAB_UPLOAD      = 11;
     /** @var int current tab */
     public $currenttab;
 
@@ -123,6 +127,16 @@ class attendance_tabs implements renderable {
         if (has_capability('mod/attendance:managetemporaryusers', $context)) {
             $toprow[] = new tabobject(self::TAB_TEMPORARYUSERS, $this->att->url_managetemp()->out(),
                             get_string('tempusers', 'attendance'));
+        }
+        if (has_capability('mod/attendance:signinsheets', $context)) {
+            $toprow[] = new tabobject(self::TAB_MANAGE,
+                            $this->att->url_signinsheets()->out(true,
+                                array('action' => mod_attendance_sessions_page_params::ACTION_MANAGE)),
+                                get_string('signinsheetparticipantsmanage', 'attendance'));
+            $toprow[] = new tabobject(self::TAB_UPLOAD,
+                            $this->att->url_signinsheets()->out(true,
+                                array('action' => mod_attendance_sessions_page_params::ACTION_UPLOAD)),
+                                get_string('signinsheetparticipantsupload', 'attendance'));
         }
         if ($this->currenttab == self::TAB_UPDATE && has_capability('mod/attendance:manageattendances', $context)) {
             $toprow[] = new tabobject(self::TAB_UPDATE,
@@ -316,6 +330,17 @@ class attendance_manage_data implements renderable {
     }
 
     /**
+     * Helper function to return urls.
+     * @param int $sessionid
+     * @param int $grouptype
+     * @param int $action
+     * @return mixed
+     */
+    public function url_signinsheets($sessionid, $grouptype, $action) {
+        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $action);
+    }
+
+    /**
      * Must be called without or with both parameters
      *
      * @param int $sessionid
@@ -361,6 +386,113 @@ class attendance_take_data implements renderable {
 
     /**
      * attendance_take_data constructor.
+     * @param mod_attendance_structure $att
+     */
+    public function  __construct(mod_attendance_structure $att) {
+        if ($att->pageparams->grouptype) {
+            $this->users = $att->get_users($att->pageparams->grouptype, $att->pageparams->page);
+        } else {
+            $this->users = $att->get_users($att->pageparams->group, $att->pageparams->page);
+        }
+
+        $this->pageparams = $att->pageparams;
+
+        $this->groupmode = $att->get_group_mode();
+        $this->cm = $att->cm;
+
+        $this->statuses = $att->get_statuses();
+
+        $this->sessioninfo = $att->get_session_info($att->pageparams->sessionid);
+        $this->updatemode = $this->sessioninfo->lasttaken > 0;
+
+        if (isset($att->pageparams->copyfrom)) {
+            $this->sessionlog = $att->get_session_log($att->pageparams->copyfrom);
+        } else if ($this->updatemode) {
+            $this->sessionlog = $att->get_session_log($att->pageparams->sessionid);
+        } else {
+            $this->sessionlog = array();
+        }
+
+        if (!$this->updatemode) {
+            $this->sessions4copy = $att->get_today_sessions_for_copy($this->sessioninfo);
+        }
+
+        $this->urlpath = $att->url_take()->out_omit_querystring();
+        $params = $att->pageparams->get_significant_params();
+        $params['id'] = $att->cm->id;
+        $this->urlparams = $params;
+
+        $this->att = $att;
+    }
+
+    /**
+     * Url function
+     * @param array $params
+     * @param array $excludeparams
+     * @return moodle_url
+     */
+    public function url($params=array(), $excludeparams=array()) {
+        $params = array_merge($this->urlparams, $params);
+
+        foreach ($excludeparams as $paramkey) {
+            unset($params[$paramkey]);
+        }
+
+        return new moodle_url($this->urlpath, $params);
+    }
+
+    /**
+     * Url view helper.
+     * @param array $params
+     * @return mixed
+     */
+    public function url_view($params=array()) {
+        return url_helpers::url_view($this->att, $params);
+    }
+
+    /**
+     * Url path helper.
+     * @return string
+     */
+    public function url_path() {
+        return $this->urlpath;
+    }
+}
+
+/**
+ * class signinsheet data.
+ *
+ * @copyright  2011 Artem Andreev <andreev.artem@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class attendance_signinsheet_data implements renderable {
+    /** @var array  */
+    public $users;
+    /** @var array|null|stdClass  */
+    public $pageparams;
+    /** @var int  */
+    public $groupmode;
+    /** @var stdclass  */
+    public $cm;
+    /** @var array  */
+    public $statuses;
+    /** @var mixed  */
+    public $sessioninfo;
+    /** @var array  */
+    public $sessionlog;
+    /** @var array  */
+    public $sessions4copy;
+    /** @var bool  */
+    public $updatemode;
+    /** @var string  */
+    private $urlpath;
+    /** @var array */
+    private $urlparams;
+    /** @var mod_attendance_structure  */
+    public $att;
+
+    /**
+     * attendance_signinsheet_data constructor.
      * @param mod_attendance_structure $att
      */
     public function  __construct(mod_attendance_structure $att) {
@@ -779,6 +911,27 @@ class url_helpers {
         }
 
         return $att->url_take($params);
+    }
+
+    /**
+     * Url generate signin sheet.
+     * @param stdClass $att
+     * @param int $sessionid
+     * @param int $grouptype
+     * @param int $action
+     * @return mixed
+     */
+    public static function url_signinsheets($att, $sessionid, $grouptype, $action) {
+        $params = array('sessionid' => $sessionid);
+        if (isset($grouptype)) {
+            $params['grouptype'] = $grouptype;
+        }
+        if (isset($action)) {
+            $params['action'] = $action;
+            $params['download'] = true;
+        }
+
+        return $att->url_signinsheets($params);
     }
 
     /**
