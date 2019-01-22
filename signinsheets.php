@@ -32,7 +32,7 @@ $pageparams = new mod_attendance_take_page_params();
 $id                     = required_param('id', PARAM_INT);
 // $pageparams->sessionid  = required_param('sessionid', PARAM_INT);
 $pageparams->sessionid  = optional_param('sessionid', null, PARAM_INT);
-$pageparams->grouptype  = required_param('grouptype', PARAM_INT);
+$pageparams->grouptype  = optional_param('grouptype', 0, PARAM_INT);
 $pageparams->sort       = optional_param('sort', ATT_SORT_DEFAULT, PARAM_INT);
 $pageparams->copyfrom   = optional_param('copyfrom', null, PARAM_INT);
 $pageparams->viewmode   = optional_param('viewmode', null, PARAM_INT);
@@ -50,7 +50,7 @@ $download = optional_param('download', false, PARAM_ALPHA);
 $cm             = get_coursemodule_from_id('attendance', $id, 0, false, MUST_EXIST);
 $course         = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 $attendance     = $DB->get_record('attendance', array('id' => $cm->instance), '*', MUST_EXIST);
-if (!$download) {
+if (!$download && $pageparams->sessionid != null) {
     // Check this is a valid session for this attendance if we are downloading a PDF file.
     $session = $DB->get_record('attendance_sessions', array('id' => $pageparams->sessionid, 'attendanceid' => $attendance->id),
                                   '*', MUST_EXIST);
@@ -104,7 +104,6 @@ if (!$download) {
     echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
     // echo $output->render($tabs);
     // echo $output->render($sesstable);
-    echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
 
 
 
@@ -112,10 +111,10 @@ if (!$download) {
 
 function find_pdf_file($contextid, $listfilename) {
     $fs = get_file_storage();
-    if ($pdffile = $fs->get_file($contextid, 'mod_offlinequiz', 'participants', 0, '/', $listfilename)) {
+    if ($pdffile = $fs->get_file($contextid, 'mod_attendance', 'participants', 0, '/', $listfilename)) {
         return $pdffile;
     } else {
-        return $fs->get_file($contextid, 'mod_offlinequiz', 'pdfs', 0, '/', $listfilename);
+        return $fs->get_file($contextid, 'mod_attendance', 'pdfs', 0, '/', $listfilename);
     }
 }
 
@@ -141,6 +140,7 @@ switch($action) {
         // if (!signinsheet_partlist_created($signinsheet)) {
         //     redirect('signinsheets.php?att='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
         // }
+        echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
         $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
         $title = get_string('signinsheetparticipantsmanage', 'attendance').' :: ' .format_string($course->fullname);
         $header = new mod_attendance_header($att, $title);
@@ -149,7 +149,7 @@ switch($action) {
         echo $output->render($tabs);
 
         echo $OUTPUT->heading(format_string($signinsheet->name));
-        echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'participants', 'attendance');
+        echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
         // Show update button.
         ?>
 
@@ -173,11 +173,11 @@ switch($action) {
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
 
         $sql = "SELECT id, name, number, filename
-                  FROM {signinsheet_p_lists}
-                 WHERE offlinequizid = :offlinequizid
+                  FROM {attendance_ss_p_lists}
+                 WHERE signinsheetid = :signinsheetid
               ORDER BY name ASC";
 
-        $lists = $DB->get_records_sql($sql, array('offlinequizid' => $offlinequiz->id));
+        $lists = $DB->get_records_sql($sql, array('signinsheetid' => $att->id));
 
         foreach ($lists as $list) {
             $fs = get_file_storage();
@@ -193,11 +193,11 @@ switch($action) {
             // Create PDF file if necessary.
             if (!property_exists($list, 'filename') ||  !$list->filename ||
                     !$pdffile = find_pdf_file($context->id, $list->filename)) {
-                $pdffile = signinsheet_create_pdf_participants($offlinequiz, $course->id, $list, $context);
+                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $list, $context);
                 if (!empty($pdffile)) {
                     $list->filename = $pdffile->get_filename();
                 }
-                $DB->update_record('signinsheet_p_lists', $list);
+                $DB->update_record('attendance_ss_p_lists', $list);
             }
 
             // Show downloadlink.
@@ -208,7 +208,7 @@ switch($action) {
                 echo $OUTPUT->action_link($url, trim(format_text(get_string('signinsheetdownloadpartpdf', 'attendance', $list->name))));
 
                 $list->filename = $pdffile->get_filename();
-                $DB->update_record('signinsheet_p_lists', $list);
+                $DB->update_record('attendance_ss_p_lists', $list);
             } else {
                 echo $OUTPUT->notification(format_text(get_string('signinsheetcreatepartpdferror', 'attendance', $list->name)));
             }
@@ -242,16 +242,16 @@ switch($action) {
 
     case mod_attendance_sessions_page_params::ACTION_UPLOAD:
         // We redirect if no list created.
-        if (!signinsheet_partlist_created($offlinequiz)) {
-            redirect('participants.php?q='.$offlinequiz->id, get_string('signinsheetcreatelistfirst', 'attendance'));
+        if (!signinsheet_partlist_created($att)) {
+            redirect('participants.php?q='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
 
         $lists = $DB->get_records_sql("
                 SELECT *
-                  FROM {signinsheet_p_lists}
-                 WHERE offlinequizid = :offlinequizid
+                  FROM {attendance_ss_p_lists}
+                 WHERE signinsheetid = :signinsheetid
               ORDER BY name ASC",
-                array('offlinequizid' => $offlinequiz->id));
+                array('signinsheetid' => $att->id));
 
         $fs = get_file_storage();
 
@@ -269,12 +269,13 @@ switch($action) {
 
         // Only print headers and tabs if not asked to download data.
         if (!$download) {
+            echo $OUTPUT->heading_with_help(get_string('signinsheetuploadparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
             echo $OUTPUT->header();
             // Print the tabs.
             $currenttab = 'participants';
             include('tabs.php');
-            echo $OUTPUT->heading(format_string($offlinequiz->name));
-            echo $OUTPUT->heading_with_help(get_string('signinsheetuploadpart', 'attendance'), 'partimportnew', 'attendance');
+            echo $OUTPUT->heading(format_string($att->name));
+            echo $OUTPUT->heading_with_help(get_string('signinsheetuploadpart', 'attendance'), 'signinsheetparticipantsimportnew', 'attendance');
         }
         $report = new participants_report();
         $importform = new signinsheet_participants_upload_form($thispageurl);
@@ -287,7 +288,7 @@ switch($action) {
             if ($fromform = $importform->get_data()) {
 
                 @raise_memory_limit('128M');
-                $attendanceconfig->papergray = $offlinequiz->papergray;
+                $attendanceconfig->papergray = $att->papergray;
 
                 $fileisgood = false;
 
@@ -296,7 +297,7 @@ switch($action) {
                 $realfilename = $importform->get_new_filename('newfile');
                 // Create a unique temp dir.
                 $unique = str_replace('.', '', microtime(true) . rand(0, 100000));
-                $tempdir = "{$CFG->tempdir}/offlinequiz/import/$unique";
+                $tempdir = "{$CFG->tempdir}/attendance/import/$unique";
                 check_dir_exists($tempdir, true, true);
 
                 $importfile = $tempdir . '/' . $realfilename;
@@ -351,16 +352,16 @@ switch($action) {
                 $scanner = new signinsheet_participants_scanner($attendance, $context->id, 0, 0);
                 if ($scannedpage = $scanner->load_image($filename)) {
                     if ($scannedpage->status == 'ok') {
-                        list($scanner, $scannedpage) = signinsheet_check_scanned_participants_page($offlinequiz, $scanner, $scannedpage,
+                        list($scanner, $scannedpage) = signinsheet_check_scanned_participants_page($att, $scanner, $scannedpage,
                                                                         $USER->id, $coursecontext, true);
                     }
                     if ($scannedpage->status == 'ok') {
-                        $scannedpage = signinsheet_process_scanned_participants_page($offlinequiz, $scanner, $scannedpage,
+                        $scannedpage = signinsheet_process_scanned_participants_page($att, $scanner, $scannedpage,
                                                                           $USER->id, $coursecontext);
                     }
                     if ($scannedpage->status == 'ok') {
-                        $choicesdata = $DB->get_records('signinsheet_p_choices', array('scannedppageid' => $scannedpage->id));
-                        $scannedpage = $scannedpage = signinsheet_submit_scanned_participants_page($offlinequiz, $scannedpage, $choicesdata);
+                        $choicesdata = $DB->get_records('attendance_ss_p_choices', array('scannedppageid' => $scannedpage->id));
+                        $scannedpage = $scannedpage = signinsheet_submit_scanned_participants_page($att, $scannedpage, $choicesdata);
                         if ($scannedpage->status == 'submitted') {
                             echo get_string('signinsheetpagenumberimported', 'attendance', $j)."<br /><br />";
                         }
@@ -393,15 +394,15 @@ switch($action) {
             // Some pages need to be deleted.
             $pageids = optional_param_array('pageid', array(), PARAM_INT);
             foreach ($pageids as $pageid) {
-                if ($pageid && $todelete = $DB->get_record('signinsheet_scanned_p_pages', array('id' => $pageid))) {
-                    $DB->delete_records('signinsheet_scanned_p_pages', array('id' => $pageid));
-                    $DB->delete_records('signinsheet_p_choices', array('scannedppageid' => $pageid));
+                if ($pageid && $todelete = $DB->get_record('attendance_ss_scanned_pages', array('id' => $pageid))) {
+                    $DB->delete_records('attendance_ss_scanned_pages', array('id' => $pageid));
+                    $DB->delete_records('attendance_ss_p_choices', array('scannedppageid' => $pageid));
                 }
             }
-            $report->error_report($offlinequiz, $course->id);
+            $report->error_report($att, $course->id);
             $importform->display();
         } else {
-            $report->error_report($offlinequiz, $course->id);
+            $report->error_report($att, $course->id);
             $importform->display();
         }
         break;

@@ -27,7 +27,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once(dirname(__FILE__) . '/signinsheetlocallib.php');
+require_once(dirname(__FILE__) . '/signinsheetslocallib.php');
 require_once($CFG->dirroot . '/mod/offlinequiz/report/rimport/scanner.php');
 require_once($CFG->libdir . '/questionlib.php');
 require_once($CFG->libdir . '/filelib.php');

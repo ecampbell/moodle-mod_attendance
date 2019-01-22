@@ -450,6 +450,15 @@ $string['signinsheetinvalidnumberofdigits'] = 'Invalid number of digits used. On
 $string['signinsheetinvaliduserfield'] = 'Invalid field of the user table used.';
 $string['signinsheetlecturer'] = 'Lecturer';
 $string['signinsheetparticipants'] = 'Participants';
+$string['signinsheetparticipants_help'] = '<p>Lists of participants are designed for large classes with many students. They help the teacher to check which students participated in the class.
+You can add users to different lists. Each list could, for instance, contain the participants in a particular room. The participants can be members of a special group. A group registration tool can be used for creating those groups.
+Lists of participants can be downloaded as PDF documents, printed and marked with crosses. Afterwards they can be uploaded and the marked students will be marked as present in the database.
+Please avoid spots on the barcodes as they are used to identify the students.</p>';
+$string['signinsheetparticipantsimportnew'] = 'Uploading lists of participants';
+$string['signinsheetparticipantsimportnew_help'] = '<p>
+In this tab you can upload the filled-in lists of participants. You can upload single scanned image files or several scanned image files in a ZIP-archive. The offline quiz module will process the image files in the background.
+File names are not relevant but should not contain special characters such as umlauts. Images should be GIFs, PNGs
+or TIFs. A resolution between 200 and 300dpi is recommended.</p>';
 $string['signinsheetparticipantsmanage'] = 'Manage Signin sheets';
 $string['signinsheetparticipantsupload'] = 'Upload Signin sheets';
 $string['signinsheetparticipantsinlists'] = 'Participants in lists';
@@ -473,6 +482,8 @@ $string['signinsheetscanningoptionsheading'] = 'Scanning options';
 $string['signinsheetscanneroptions'] = 'Scanner settings';
 $string['signinsheetlogourl'] = 'Logo URL';
 $string['signinsheetlogourldesc'] = 'URL of an image file that is displayed on the top right corner of signin sheets, i.e. <b>http://www.yoursite.tld/mylogo.png</b> or <b>../path/to/your/logo.png</b>. The maximum allowed size is 520x140 pixels. Signin sheets cannot be processed if the image exceeds the maximum size!';
+$string['signinsheetuploadparticipants'] = 'Upload/Correct lists of participants';
+$string['signinsheetupload'] = 'Upload/Correct';
 
 $string['privacy:metadata:attendance:signinsheetpapergray'] = 'The grayscale of this attendance';
 $string['somedisabledstatus'] = '(Some options have been removed as the session has started.)';
