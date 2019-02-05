@@ -334,10 +334,11 @@ class attendance_manage_data implements renderable {
      * @param int $sessionid
      * @param int $grouptype
      * @param int $action
+     * @param int $forcenew
      * @return mixed
      */
-    public function url_signinsheets($sessionid, $grouptype, $action) {
-        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $action);
+    public function url_signinsheets($sessionid, $grouptype, $action, $forcenew = 0) {
+        return url_helpers::url_signinsheets($this->att, $sessionid, $grouptype, $action, $forcenew);
     }
 
     /**
@@ -919,9 +920,10 @@ class url_helpers {
      * @param int $sessionid
      * @param int $grouptype
      * @param int $action
+     * @param int $forcenew
      * @return mixed
      */
-    public static function url_signinsheets($att, $sessionid, $grouptype, $action) {
+    public static function url_signinsheets($att, int $sessionid, int $grouptype, int $action, int $forcenew = 0) {
         $params = array('sessionid' => $sessionid);
         if (isset($grouptype)) {
             $params['grouptype'] = $grouptype;
@@ -929,6 +931,9 @@ class url_helpers {
         if (isset($action)) {
             $params['action'] = $action;
             $params['download'] = true;
+        }
+        if (isset($forcenew)) {
+            $params['forcenew'] = $forcenew;
         }
 
         return $att->url_signinsheets($params);

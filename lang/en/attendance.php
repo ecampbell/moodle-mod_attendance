@@ -488,6 +488,8 @@ $string['signinsheetscanningoptionsheading'] = 'Scanning options';
 $string['signinsheetscanneroptions'] = 'Scanner settings';
 $string['signinsheetlogourl'] = 'Logo URL';
 $string['signinsheetlogourldesc'] = 'URL of an image file that is displayed on the top right corner of signin sheets, i.e. <b>http://www.yoursite.tld/mylogo.png</b> or <b>../path/to/your/logo.png</b>. The maximum allowed size is 520x140 pixels. Signin sheets cannot be processed if the image exceeds the maximum size!';
+$string['signinsheetrotate'] = 'Rotate';
+$string['signinsheetrotatingsheet'] = 'Sheet is rotated...';
 $string['signinsheetuploadparticipants'] = 'Upload/Correct lists of participants';
 $string['signinsheetupload'] = 'Upload/Correct';
 

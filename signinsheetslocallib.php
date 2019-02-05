@@ -927,7 +927,7 @@ function signinsheet_add_group($signinsheetid, $groupnumber) {
 function signinsheet_partlist_created($signinsheet) {
     global $DB;
 
-    return $DB->count_records('signinsheet_p_lists', array('signinsheetid' => $signinsheet->id)) > 0;
+    return $DB->count_records('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id)) > 0;
 }
 
 
@@ -1423,7 +1423,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     $listid = optional_param('listid', '', PARAM_INT);
     $lists = $DB->get_records_sql("
             SELECT id, number, name
-              FROM {signinsheet_p_lists}
+              FROM {attendance_ss_p_lists}
              WHERE signinsheetid = :signinsheetid
           ORDER BY number ASC",
             array('signinsheetid' => $signinsheet->id));
@@ -1445,7 +1445,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     $sql = "SELECT p.id, p.userid, p.listid, u.".$signinsheetconfig->ID_field.", u.firstname, u.lastname,
                    u.alternatename, u.middlename, u.firstnamephonetic, u.lastnamephonetic, u.picture, p.checked
               FROM {signinsheet_participants} p,
-                   {signinsheet_p_lists} pl,
+                   {attendance_ss_p_lists} pl,
                    {user} u,
                    {role_assignments} ra
              WHERE p.listid = pl.id
@@ -1463,7 +1463,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
 
     $countsql = "SELECT COUNT(*)
                    FROM {signinsheet_participants} p,
-                        {signinsheet_p_lists} pl,
+                        {attendance_ss_p_lists} pl,
                         {user} u
                   WHERE p.listid = pl.id
                     AND p.userid = u.id
@@ -1692,7 +1692,7 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
                    u.alternatename, u.middlename, u.firstnamephonetic, u.lastnamephonetic,
                    u.picture, p.checked
              FROM {signinsheet_participants} p,
-                  {signinsheet_p_lists} pl,
+                  {attendance_ss_p_lists} pl,
                   {user} u,
                   {role_assignments} ra
             WHERE p.listid = pl.id
@@ -1804,7 +1804,7 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
         echo $headers . " \n";
     }
 
-    $lists = $DB->get_records('signinsheet_p_lists', array('signinsheetid' => $signinsheet->id));
+    $lists = $DB->get_records('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id));
     $participants = $DB->get_records_sql($sql, $params);
     if ($participants) {
         foreach ($participants as $participant) {

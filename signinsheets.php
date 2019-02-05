@@ -44,7 +44,7 @@ define("MAX_USERS_PER_PAGE", 5000);
 
 $q = optional_param('q', 0, PARAM_INT);                 // Or session ID.
 $forcenew = optional_param('forcenew', 0, PARAM_INT);
-$action = optional_param('action', '', PARAM_ALPHA);
+$action = optional_param('action', 0, PARAM_INT);
 $download = optional_param('download', false, PARAM_ALPHA);
 
 $cm             = get_coursemodule_from_id('attendance', $id, 0, false, MUST_EXIST);
@@ -102,11 +102,6 @@ $PAGE->requires->yui_module('moodle-mod_attendance-toolboxes',
 if (!$download) {
     echo $output->header();
     echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
-    // echo $output->render($tabs);
-    // echo $output->render($sesstable);
-
-
-
 }
 
 function find_pdf_file($contextid, $listfilename) {
@@ -123,12 +118,16 @@ switch($action) {
         // Get the attendance list for the session, and generate it as a PDF file.
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
         $participants = new attendance_take_data($att);
-        $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, null, $context);
+        $list = new stdClass();
+        $list->sessionid = $pageparams->sessionid;
+        $list->attendanceid = $att->id;
+        $list->name = date("D d/m/Y", $session->sessdate);
+        $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
         if ($pdffile) {
             $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
                 $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
-                ''; // '?forcedownload=1';
-            echo $OUTPUT->action_link($url, get_string('signinsheetpdfdownload', 'attendance', $pdffile->get_filename()));
+                '?forcedownload=1';
+            echo $OUTPUT->action_link($url, trim(format_text(get_string('signinsheetpdfdownload', 'attendance', $pdffile->get_filename()))));
         } else {
             echo $OUTPUT->notification(get_string('signinsheetpdferror', 'attendance', $list->name));
         }
@@ -146,6 +145,7 @@ switch($action) {
         $header = new mod_attendance_header($att, $title);
         echo $output->header();
         echo $output->render($header);
+        $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
         echo $output->render($tabs);
 
         echo $OUTPUT->heading(format_string($signinsheet->name));
@@ -173,11 +173,11 @@ switch($action) {
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
 
         $sql = "SELECT id, name, number, filename
-                  FROM {attendance_ss_p_lists}
-                 WHERE signinsheetid = :signinsheetid
-              ORDER BY name ASC";
+                FROM {attendance_ss_p_lists}
+                WHERE attendanceid = :attendanceid
+                ORDER BY name ASC";
 
-        $lists = $DB->get_records_sql($sql, array('signinsheetid' => $att->id));
+        $lists = $DB->get_records_sql($sql, array('attendanceid' => $att->id));
 
         foreach ($lists as $list) {
             $fs = get_file_storage();
@@ -248,10 +248,10 @@ switch($action) {
 
         $lists = $DB->get_records_sql("
                 SELECT *
-                  FROM {attendance_ss_p_lists}
-                 WHERE signinsheetid = :signinsheetid
-              ORDER BY name ASC",
-                array('signinsheetid' => $att->id));
+                FROM {attendance_ss_p_lists}
+                WHERE attendanceid = :attendanceid
+                ORDER BY name ASC",
+                array('attendanceid' => $att->id));
 
         $fs = get_file_storage();
 
@@ -267,20 +267,19 @@ switch($action) {
             redirect('signinsheets.php?action=manage&amp;q=' . $signinsheet->id, get_string('signinsheetcreatepdffirst', 'attendance'));
         }
 
-        // Only print headers and tabs if not asked to download data.
-        if (!$download) {
-            echo $OUTPUT->heading_with_help(get_string('signinsheetuploadparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
-            echo $OUTPUT->header();
-            // Print the tabs.
-            $currenttab = 'participants';
-            include('tabs.php');
-            echo $OUTPUT->heading(format_string($att->name));
-            echo $OUTPUT->heading_with_help(get_string('signinsheetuploadpart', 'attendance'), 'signinsheetparticipantsimportnew', 'attendance');
-        }
+        // Print headers and tabs.
+        echo $OUTPUT->heading_with_help(get_string('signinsheetuploadparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
+        echo $OUTPUT->header();
+        // Print the tabs.
+        echo $output->header();
+        echo $output->render($header);
+        $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
+        echo $output->render($tabs);
+
         $report = new participants_report();
         $importform = new signinsheet_participants_upload_form($thispageurl);
 
-        $first = optional_param('first', 0, PARAM_INT);                // Index of the last imported student.
+        $first = optional_param('first', 0, PARAM_INT); // Index of the last imported student.
         $numimports = optional_param('numimports', 0, PARAM_INT);
         $tempdir = optional_param('tempdir', 0, PARAM_PATH);
 
@@ -406,6 +405,10 @@ switch($action) {
             $importform->display();
         }
         break;
+    default:
+        // Invalid action specified.
+        echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
+        echo $OUTPUT->notification(get_string('signinsheetpdferror', 'attendance', ""));
 }
 // Finish the page.
 if (!$download) {

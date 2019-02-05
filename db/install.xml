@@ -171,7 +171,8 @@
     <TABLE NAME="attendance_ss_p_lists" COMMENT="Lists for participants">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="signinsheetid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="number" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The number of the list."/>
         <FIELD NAME="filename" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="The id of the PDF file in the files table."/>
@@ -180,7 +181,8 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="signinsheetid" UNIQUE="false" FIELDS="signinsheetid"/>
+        <INDEX NAME="sessionid" UNIQUE="false" FIELDS="sessionid"/>
+        <INDEX NAME="attendanceid" UNIQUE="false" FIELDS="attendanceid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="attendance_ss_participants" COMMENT="Checklist for the participants of an signinsheet">

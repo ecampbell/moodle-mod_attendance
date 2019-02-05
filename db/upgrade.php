@@ -559,7 +559,8 @@ function xmldb_attendance_upgrade($oldversion=0) {
             // Lists for participants.
 
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-            $table->add_field('signinsheetid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
+            $table->add_field('attendanceid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
+            $table->add_field('sessionid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
             $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, null, null, null);
             $table->add_field('number', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '1'); // The number of the list.
             $table->add_field('filename', XMLDB_TYPE_CHAR, '1000', null, null, null, null); // The id of the PDF file in the files table.

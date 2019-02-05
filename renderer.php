@@ -344,7 +344,7 @@ class mod_attendance_renderer extends plugin_renderer_base {
             }
             if (has_capability('mod/attendance:takeattendances', $sessdata->att->context)) {
             // if (has_capability('mod/attendance:signinsheets', $sessdata->att->context)) {
-                $url = $sessdata->url_signinsheets($sess->id, $sess->groupid, mod_attendance_sessions_page_params::ACTION_DOWNLOAD);
+                $url = $sessdata->url_signinsheets($sess->id, $sess->groupid, mod_attendance_sessions_page_params::ACTION_DOWNLOAD, 1);
                 $title = get_string('signinsheetgenerate', 'attendance');
                 $actions .= $this->output->action_icon($url, new pix_icon('t/print', $title));
             }

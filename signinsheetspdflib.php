@@ -92,7 +92,7 @@ class signinsheet_participants_pdf extends signinsheet_pdf
 
         $this->Cell(10, 3.5, '', 0, 0, 'C');
         $this->Cell(3.5, 3.5, '', 1, 0, 'C');
-        $this->Image($CFG->dirroot . '/mod/attendance/pix/kreuz.gif', $this->GetX() - 3.3, $this->Gety() + 0.2, 3.15, 0);
+        $this->Image($CFG->dirroot . '/mod/attendance/pix/cross.gif', $this->GetX() - 3.3, $this->Gety() + 0.2, 3.15, 0);
         $this->SetFont('FreeSans', 'B', 10);
         $this->Cell(31, 3.5, "", 0, 0, 'L');
         $this->Cell(55, 3.5, get_string('lastname'), 0, 0, 'L');
@@ -179,9 +179,10 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
     }
 
     $pdf = new signinsheet_participants_pdf('P', 'mm', 'A4');
-    // $pdf->listno = $list->number;
-    $pdf->listno = 1;
+    $pdf->listno = $list->number;
     $title = $att->course->fullname . ', ' . $att->name;
+    // Add the list name to the title.
+    $title .= ', ' . $list->name;
     $pdf->set_title($title);
     $pdf->SetMargins(15, 25, 15);
     $pdf->SetAutoPageBreak(true, 20);
@@ -269,7 +270,7 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
             'filearea' => 'participants',
             'filepath' => '/',
             'itemid' => 0,
-            'filename' => $fileprefix . '_' . $timestamp . '.pdf');
+            'filename' => $fileprefix . '_' . $list->id . '_' . $timestamp . '.pdf');
 
     if ($oldfile = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
             $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename'])) {

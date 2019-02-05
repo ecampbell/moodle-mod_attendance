@@ -167,7 +167,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
         if (!property_exists($scannedpage, 'resultid') || !$scannedpage->resultid || $recheckresult) {
             $sql = "SELECT id
                       FROM {signinsheet_results}
-                     WHERE offlinequizid = :offlinequizid
+                     WHERE signinsheetid = :signinsheetid
                        AND userid = :userid
                        AND status = 'complete'";
             $params = array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $group->id, 'userid' => $user->id);
@@ -182,14 +182,14 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
             $scannedpage->error = 'resultexists';
         } else {
             if (!property_exists($scannedpage, 'id') || !$scannedpage->id) {
-                $otherpages = $DB->get_records('signinsheet_scanned_pages',
+                $otherpages = $DB->get_records('attendance_ss_scanned_pages',
                                                array('signinsheetid' => $signinsheet->id,
                                                      'userkey' => $user->{$signinsheetconfig->ID_field},
                                                      'groupnumber' => $group->number, 'pagenumber' => $page));
             } else {
                 $sql = "SELECT id
-                          FROM {signinsheet_scanned_pages}
-                         WHERE offlinequizid = :offlinequizid
+                          FROM {attendance_ss_scanned_pages}
+                         WHERE signinsheetid = :signinsheetid
                            AND userkey = :userkey
                            AND groupnumber = :groupnumber
                            AND pagenumber = :pagenumber
@@ -221,7 +221,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
             // The problem with this is that we could have several partial results with several pages.
             $sql = "SELECT *
                       FROM {signinsheet_results}
-                     WHERE offlinequizid = :offlinequizid
+                     WHERE signinsheetid = :signinsheetid
                        AND offlinegroupid = :offlinegroupid
                        AND userid = :userid
                        AND status = 'partial'
@@ -236,7 +236,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
                 // Get the question instances for initial maxmarks.
                 $sql = "SELECT questionid, maxmark
                           FROM {signinsheet_group_questions}
-                         WHERE offlinequizid = :offlinequizid
+                         WHERE signinsheetid = :signinsheetid
                            AND offlinegroupid = :offlinegroupid";
 
                 $qinstances = $DB->get_records_sql($sql,
@@ -280,9 +280,9 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
     // We insert the scanned page into the database in any case.
     $scannedpage->time = time();
     if (property_exists($scannedpage, 'id') && !empty($scannedpage->id)) {
-        $DB->update_record('signinsheet_scanned_pages', $scannedpage);
+        $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
     } else {
-        $scannedpage->id = $DB->insert_record('signinsheet_scanned_pages', $scannedpage);
+        $scannedpage->id = $DB->insert_record('attendance_ss_scanned_pages', $scannedpage);
     }
 
     // Now the scanned page definitely has an ID, so we can store the corners.
@@ -392,7 +392,7 @@ function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner
             $scannedpage->status = 'error';
             $scannedpage->error = 'insecuremarkings';
             $scannedpage->time = time();
-            $DB->update_record('signinsheet_scanned_pages', $scannedpage);
+            $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
         }
     } // End if status ok.
 
@@ -470,7 +470,7 @@ function signinsheet_submit_scanned_page($signinsheet, $scannedpage, $choicesdat
     $scannedpage->error = 'missingpages';
     $scannedpage->time = time();
 
-    $DB->update_record('signinsheet_scanned_pages', $scannedpage);
+    $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
 
     return $scannedpage;
 }
@@ -501,17 +501,17 @@ function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scan
                     // because we have to create a new result
                     // using the new group's question usage template.
                     unset($scannedpage->resultid);
-                    $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
-                    $DB->set_field('signinsheet_scanned_pages', 'status', 'ok', array('id' => $scannedpage->id));
-                    $DB->set_field('signinsheet_scanned_pages', 'error', '', array('id' => $scannedpage->id));
+                    $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
+                    $DB->set_field('attendance_ss_scanned_pages', 'status', 'ok', array('id' => $scannedpage->id));
+                    $DB->set_field('attendance_ss_scanned_pages', 'error', '', array('id' => $scannedpage->id));
 
                     // Disconnect all other pages from this result and set their status to 'suspended'.
-                    $otherpages = $DB->get_records('signinsheet_scanned_pages', array('resultid' => $oldresultid));
+                    $otherpages = $DB->get_records('attendance_ss_scanned_pages', array('resultid' => $oldresultid));
                     foreach ($otherpages as $otherpage) {
-                        $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $otherpage->id));
+                        $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $otherpage->id));
                         if ($otherpage->status == 'submitted') {
-                            $DB->set_field('signinsheet_scanned_pages', 'status', 'suspended', array('id' => $otherpage->id));
-                            $DB->set_field('signinsheet_scanned_pages', 'error', '', array('id' => $otherpage->id));
+                            $DB->set_field('attendance_ss_scanned_pages', 'status', 'suspended', array('id' => $otherpage->id));
+                            $DB->set_field('attendance_ss_scanned_pages', 'error', '', array('id' => $otherpage->id));
                         }
                     }
                     // Delete the old result.
@@ -531,9 +531,9 @@ function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scan
             }
         } else {
             unset($scannedpage->resultid);
-            $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
+            $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
 
-            if (!$DB->get_record('signinsheet_scanned_pages', array('resultid' => $oldresultid))) {
+            if (!$DB->get_record('attendance_ss_scanned_pages', array('resultid' => $oldresultid))) {
 
                 // Delete the result.
                 $DB->delete_records('signinsheet_results', array('id' => $resultid));
@@ -568,11 +568,11 @@ function signinsheet_check_for_changed_user($signinsheet, $scanner, $scannedpage
                     $oldresultid = $scannedpage->resultid;
                     // We have to disconnect the page from its result because we have to create a new result for the new user.
                     unset($scannedpage->resultid);
-                    $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
+                    $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
 
                     // TODO what do we do with other pages that contributed to the old result?
 
-                    if (!$DB->get_record('signinsheet_scanned_pages', array('resultid' => $oldresultid))) {
+                    if (!$DB->get_record('attendance_ss_scanned_pages', array('resultid' => $oldresultid))) {
                         // Delete the result if no other pages use this result.
                         $DB->delete_records('signinsheet_results', array('id' => $oldresultid));
                     }
@@ -590,11 +590,11 @@ function signinsheet_check_for_changed_user($signinsheet, $scanner, $scannedpage
             }
         } else {
             unset($scannedpage->resultid);
-            $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
+            $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $scannedpage->id));
 
-            if (!$DB->get_record('signinsheet_scanned_pages', array('resultid' => $oldresultid))) {
+            if (!$DB->get_record('attendance_ss_scanned_pages', array('resultid' => $oldresultid))) {
                 // Delete the result.
-                $DB->delete_records('signinsheet_results', array('id' => $resultid));
+                $DB->delete_records('attendance_ss_scanned_pages', array('id' => $resultid));
             }
         }
     }
@@ -616,7 +616,7 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
 
     $resultpages = $DB->get_records_sql(
             "SELECT *
-               FROM {signinsheet_scanned_pages}
+               FROM {attendance_ss_scanned_pages}
               WHERE resultid = :resultid
                 AND status = 'submitted'",
             array('resultid' => $result->id));
@@ -641,7 +641,7 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
 
         // Change the error of all submitted pages of the result to '' (was 'missingpages' before).
         foreach ($resultpages as $page) {
-            $DB->set_field('signinsheet_scanned_pages', 'error', '', array('id' => $page->id));
+            $DB->set_field('attendance_ss_scanned_pages', 'error', '', array('id' => $page->id));
         }
 
         // Change the status of all double pages of the user to 'resultexists'.
@@ -649,8 +649,8 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
         $user = $DB->get_record('user', array('id' => $result->userid));
 
         $sql = "SELECT id
-                  FROM {signinsheet_scanned_pages}
-                 WHERE offlinequizid = :offlinequizid
+                  FROM {attendance_ss_scanned_pages}
+                 WHERE signinsheetid = :signinsheetid
                    AND userkey = :userkey
                    AND groupnumber = :groupnumber
                    AND error = 'doublepage'";
@@ -660,8 +660,8 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
                 'groupnumber' => $group->number);
         $doublepages = $DB->get_records_sql($sql, $params);
         foreach ($doublepages as $page) {
-            $DB->set_field('signinsheet_scanned_pages', 'error', 'resultexists', array('id' => $page->id));
-            $DB->set_field('signinsheet_scanned_pages', 'resultid', 0, array('id' => $page->id));
+            $DB->set_field('attendance_ss_scanned_pages', 'error', 'resultexists', array('id' => $page->id));
+            $DB->set_field('attendance_ss_scanned_pages', 'resultid', 0, array('id' => $page->id));
         }
 
         return true;
@@ -694,7 +694,7 @@ function signinsheet_check_different_result($scannedpage) {
 
         $sql = "SELECT id
                   FROM {signinsheet_results}
-                 WHERE offlinequizid = :offlinequizid
+                 WHERE signinsheetid = :signinsheetid
                    AND offlinegroupid = :offlinegroupid
                    AND userid = :userid
                    AND status = 'complete'";
@@ -703,7 +703,7 @@ function signinsheet_check_different_result($scannedpage) {
                 'userid' => $newresult->userid);
 
         $oldresult = $DB->get_record_sql($sql, $params);
-        if ($oldpageid = $DB->get_field('signinsheet_scanned_pages', 'id',
+        if ($oldpageid = $DB->get_field('attendance_ss_scanned_pages', 'id',
                                         array('resultid' => $oldresult->id, 'pagenumber' => $scannedpage->pagenumber))) {
             $oldchoices = $DB->get_records('signinsheet_choices', array('scannedpageid' => $oldpageid), 'slotnumber, choicenumber');
 
@@ -713,7 +713,7 @@ function signinsheet_check_different_result($scannedpage) {
                     $newchoice = $newchoicesindexed[$oldchoice->slotnumber][$oldchoice->choicenumber];
                     if ($oldchoice->value != $newchoice->value) {
                         $scannedpage->error = 'differentresultexists';
-                        $DB->update_record('signinsheet_scanned_pages', $scannedpage);
+                        $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
                         break;
                     }
                 }
@@ -797,8 +797,8 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
     if ($scannedpage->status == 'ok') {
         $maxlistnumber = $DB->get_field_sql("
                 SELECT MAX(number)
-                  FROM {signinsheet_p_lists}
-                 WHERE offlinequizid = :offlinequizid",
+                FROM {attendance_ss_p_lists}
+                WHERE signinsheetid = :signinsheetid",
                 array('signinsheetid' => $signinsheet->id));
         if (!property_exists($scannedpage, 'listnumber') ||
                 (!is_int($scannedpage->listnumber)) ||
@@ -810,7 +810,7 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
     }
 
     if ($scannedpage->status == 'error' && $scanner->ontop && $autorotate) {
-        print_string('rotatingsheet', 'offlinequiz');
+        print_string('signinsheetrotatingsheet', 'attendance');
 
         $oldfilename = $scannedpage->filename;
         $corners = $scanner->get_corners();
@@ -850,8 +850,8 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
                 }
                 $scannedpage->listnumber = $listnumber;
                 $maxlistnumber = $DB->get_field_sql("SELECT MAX(number)
-                        FROM {signinsheet_p_lists}
-                        WHERE offlinequizid = :offlinequizid",
+                        FROM {attendance_ss_p_lists}
+                        WHERE signinsheetid = :signinsheetid",
                         array('signinsheetid' => $signinsheet->id));
                 if ((!is_int($scannedpage->listnumber)) ||
                     $scannedpage->listnumber < 1 ||
@@ -866,9 +866,9 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
 
     $scannedpage->time = time();
     if (property_exists($scannedpage, 'id') && !empty($scannedpage->id)) {
-        $DB->update_record('signinsheet_scanned_p_pages', $scannedpage);
+        $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
     } else {
-        $scannedpage->id = $DB->insert_record('signinsheet_scanned_p_pages', $scannedpage);
+        $scannedpage->id = $DB->insert_record('attendance_ss_scanned_pages', $scannedpage);
     }
 
     if ($autorotate) {
@@ -939,13 +939,13 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
         $scannedpage->status = 'error';
         $scannedpage->error = 'insecuremarkings';
         $scannedpage->time = time();
-        $DB->update_record('signinsheet_scanned_p_pages', $scannedpage);
+        $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
     }
 
     // Check if all users are in the signinsheet_p_list.
     if ($scannedpage->status == 'ok') {
 
-        $list = $DB->get_record('signinsheet_p_lists', array('signinsheetid' => $signinsheet->id,
+        $list = $DB->get_record('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id,
                 'number' => $scannedpage->listnumber));
         $userdata = $DB->get_records('signinsheet_participants', array('listid' => $list->id));
         // Index the user data by userid.
@@ -957,7 +957,7 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
             if ($participant->userid > 0 && empty($users[$participant->userid])) {
                 $scannedpage->status = 'error';
                 $scannedpage->error = 'usernotinlist';
-                $DB->update_record('signinsheet_scanned_p_pages', $scannedpage);
+                $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
             }
         }
     }
@@ -976,7 +976,7 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
 function signinsheet_submit_scanned_participants_page($signinsheet, $scannedpage, $choicesdata) {
     global $DB;
 
-    if (!$list = $DB->get_record('signinsheet_p_lists', array('signinsheetid' => $signinsheet->id,
+    if (!$list = $DB->get_record('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id,
             'number' => $scannedpage->listnumber))) {
             print_error('missing list ' . $scannedpage->listnumber);
     }
@@ -1000,7 +1000,7 @@ function signinsheet_submit_scanned_participants_page($signinsheet, $scannedpage
     $scannedpage->status = 'submitted';
     $scannedpage->error = '';
     $scannedpage->time = time();
-    $DB->update_record('signinsheet_scanned_p_pages', $scannedpage);
+    $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
     return $scannedpage;
 
 }
