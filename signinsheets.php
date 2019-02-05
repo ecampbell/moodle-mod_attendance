@@ -122,6 +122,7 @@ switch($action) {
         $list->sessionid = $pageparams->sessionid;
         $list->attendanceid = $att->id;
         $list->name = date("D d/m/Y", $session->sessdate);
+        $list->id = 0; // Need to fix this later.
         $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
         if ($pdffile) {
             $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
