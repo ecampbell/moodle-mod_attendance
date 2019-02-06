@@ -146,7 +146,6 @@ switch($action) {
         $header = new mod_attendance_header($att, $title);
         echo $output->header();
         echo $output->render($header);
-        $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
         echo $output->render($tabs);
 
         echo $OUTPUT->heading(format_string($signinsheet->name));
@@ -244,7 +243,7 @@ switch($action) {
     case mod_attendance_sessions_page_params::ACTION_UPLOAD:
         // We redirect if no list created.
         if (!signinsheet_partlist_created($att)) {
-            redirect('participants.php?q='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
+            redirect('signinsheets.php?attendance='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
 
         $lists = $DB->get_records_sql("

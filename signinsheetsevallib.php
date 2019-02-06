@@ -92,7 +92,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
 
     $group = null;
     if ($scannedpage->status == 'ok' || $scannedpage->status == 'suspended') {
-        if (!$group = $DB->get_record('signinsheet_groups', array('signinsheetid' => $signinsheet->id,
+        if (!$group = $DB->get_record('signinsheet_groups', array('attendanceid' => $attendance->id,
                                                                   'number' => $scannedpage->groupnumber))) {
             $scannedpage->status = 'error';
             $scannedpage->error = 'grouperror';
@@ -167,10 +167,10 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
         if (!property_exists($scannedpage, 'resultid') || !$scannedpage->resultid || $recheckresult) {
             $sql = "SELECT id
                       FROM {signinsheet_results}
-                     WHERE signinsheetid = :signinsheetid
+                     WHERE attendanceid = :attendanceid
                        AND userid = :userid
                        AND status = 'complete'";
-            $params = array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $group->id, 'userid' => $user->id);
+            $params = array('attendanceid' => $attendance->id, 'offlinegroupid' => $group->id, 'userid' => $user->id);
 
             if ($DB->get_record_sql($sql, $params)) {
                 $resultexists = true;
@@ -183,20 +183,20 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
         } else {
             if (!property_exists($scannedpage, 'id') || !$scannedpage->id) {
                 $otherpages = $DB->get_records('attendance_ss_scanned_pages',
-                                               array('signinsheetid' => $signinsheet->id,
+                                               array('attendanceid' => $attendance->id,
                                                      'userkey' => $user->{$signinsheetconfig->ID_field},
                                                      'groupnumber' => $group->number, 'pagenumber' => $page));
             } else {
                 $sql = "SELECT id
                           FROM {attendance_ss_scanned_pages}
-                         WHERE signinsheetid = :signinsheetid
+                         WHERE attendanceid = :attendanceid
                            AND userkey = :userkey
                            AND groupnumber = :groupnumber
                            AND pagenumber = :pagenumber
                            AND (status = 'ok' OR status = 'submitted')
                            AND id <> :id";
 
-                $params = array('signinsheetid' => $signinsheet->id,
+                $params = array('attendanceid' => $attendance->id,
                                                 'userkey' => $user->{$signinsheetconfig->ID_field},
                                                 'groupnumber' => $group->number,
                                                 'pagenumber' => $page,
@@ -221,12 +221,12 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
             // The problem with this is that we could have several partial results with several pages.
             $sql = "SELECT *
                       FROM {signinsheet_results}
-                     WHERE signinsheetid = :signinsheetid
+                     WHERE attendanceid = :attendanceid
                        AND offlinegroupid = :offlinegroupid
                        AND userid = :userid
                        AND status = 'partial'
                   ORDER BY id ASC";
-            $params = array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $group->id, 'userid' => $user->id);
+            $params = array('attendanceid' => $attendance->id, 'offlinegroupid' => $group->id, 'userid' => $user->id);
             if (!$result = $DB->get_record_sql($sql, $params)) {
 
                 // There is no result. First we have to clone the template question usage of the offline group.
@@ -236,11 +236,11 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
                 // Get the question instances for initial maxmarks.
                 $sql = "SELECT questionid, maxmark
                           FROM {signinsheet_group_questions}
-                         WHERE signinsheetid = :signinsheetid
+                         WHERE attendanceid = :attendanceid
                            AND offlinegroupid = :offlinegroupid";
 
                 $qinstances = $DB->get_records_sql($sql,
-                        array('signinsheetid' => $signinsheet->id,
+                        array('attendanceid' => $attendance->id,
                               'offlinegroupid' => $group->id));
 
                 // Clone it...
@@ -317,7 +317,7 @@ function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner
 
     if (property_exists($scannedpage, 'resultid') && $scannedpage->resultid) {
         $group = $DB->get_record('signinsheet_groups',
-                                 array('signinsheetid' => $signinsheet->id, 'number' => $scannedpage->groupnumber));
+                                 array('attendanceid' => $attendance->id, 'number' => $scannedpage->groupnumber));
         $user = $DB->get_record('user', array($signinsheetconfig->ID_field => $scannedpage->userkey));
         $result = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid));
         $quba = signinsheet_load_questions_usage_by_activity($result->usageid);
@@ -650,12 +650,12 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
 
         $sql = "SELECT id
                   FROM {attendance_ss_scanned_pages}
-                 WHERE signinsheetid = :signinsheetid
+                 WHERE attendanceid = :attendanceid
                    AND userkey = :userkey
                    AND groupnumber = :groupnumber
                    AND error = 'doublepage'";
 
-        $params = array('signinsheetid' => $signinsheet->id,
+        $params = array('attendanceid' => $attendance->id,
                 'userkey' => $user->{$signinsheetconfig->ID_field},
                 'groupnumber' => $group->number);
         $doublepages = $DB->get_records_sql($sql, $params);
@@ -694,7 +694,7 @@ function signinsheet_check_different_result($scannedpage) {
 
         $sql = "SELECT id
                   FROM {signinsheet_results}
-                 WHERE signinsheetid = :signinsheetid
+                 WHERE attendanceid = :attendanceid
                    AND offlinegroupid = :offlinegroupid
                    AND userid = :userid
                    AND status = 'complete'";
@@ -798,8 +798,8 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
         $maxlistnumber = $DB->get_field_sql("
                 SELECT MAX(number)
                 FROM {attendance_ss_p_lists}
-                WHERE signinsheetid = :signinsheetid",
-                array('signinsheetid' => $signinsheet->id));
+                WHERE attendanceid = :attendanceid",
+                array('attendanceid' => $attendance->id));
         if (!property_exists($scannedpage, 'listnumber') ||
                 (!is_int($scannedpage->listnumber)) ||
                 $scannedpage->listnumber < 1 ||
@@ -851,8 +851,8 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
                 $scannedpage->listnumber = $listnumber;
                 $maxlistnumber = $DB->get_field_sql("SELECT MAX(number)
                         FROM {attendance_ss_p_lists}
-                        WHERE signinsheetid = :signinsheetid",
-                        array('signinsheetid' => $signinsheet->id));
+                        WHERE attendanceid = :attendanceid",
+                        array('attendanceid' => $attendance->id));
                 if ((!is_int($scannedpage->listnumber)) ||
                     $scannedpage->listnumber < 1 ||
                     $scannedpage->listnumber > $maxlistnumber) {
@@ -945,9 +945,9 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
     // Check if all users are in the signinsheet_p_list.
     if ($scannedpage->status == 'ok') {
 
-        $list = $DB->get_record('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id,
+        $list = $DB->get_record('attendance_ss_p_lists', array('attendanceid' => $attendance->id,
                 'number' => $scannedpage->listnumber));
-        $userdata = $DB->get_records('signinsheet_participants', array('listid' => $list->id));
+        $userdata = $DB->get_records('attendance_ss_participants', array('listid' => $list->id));
         // Index the user data by userid.
         $users = array();
         foreach ($userdata as $user) {
@@ -976,11 +976,11 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
 function signinsheet_submit_scanned_participants_page($signinsheet, $scannedpage, $choicesdata) {
     global $DB;
 
-    if (!$list = $DB->get_record('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id,
+    if (!$list = $DB->get_record('attendance_ss_p_lists', array('attendanceid' => $attendance->id,
             'number' => $scannedpage->listnumber))) {
             print_error('missing list ' . $scannedpage->listnumber);
     }
-    if (!$userdata = $DB->get_records('signinsheet_participants', array('listid' => $list->id))) {
+    if (!$userdata = $DB->get_records('attendance_ss_participants', array('listid' => $list->id))) {
         print_error('missing userdata');
     }
 
@@ -992,7 +992,7 @@ function signinsheet_submit_scanned_participants_page($signinsheet, $scannedpage
 
     foreach ($choicesdata as $choice) {
         if ($choice->value == 1) {
-            $DB->set_field('signinsheet_participants', 'checked', 1, array('userid' => $choice->userid, 'listid' => $list->id));
+            $DB->set_field('attendance_ss_participants', 'checked', 1, array('userid' => $choice->userid, 'listid' => $list->id));
             // The following makes sure that the output is sent immediately.
             @flush();@ob_flush();
         }

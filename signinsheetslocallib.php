@@ -1,5 +1,5 @@
 <?php
-// This file is part of mod_signinsheet for Moodle - http://moodle.org/
+// This file is part of mod_attendance for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * logic, should go here. Never include this file from your lib.php!
  *
  * @package       mod
- * @subpackage    signinsheet
+ * @subpackage    attendance
  * @author        Juergen Zimmer <zimmerj7@univie.ac.at>
  * @copyright     2015 Academic Moodle Cooperation {@link http://www.academic-moodle-cooperation.org}
  * @since         Moodle 2.2+
@@ -136,96 +136,6 @@ class signinsheet_question_usage_by_activity extends question_usage_by_activity 
     }
 }
 
-function signinsheet_make_questions_usage_by_activity($component, $context) {
-    return new signinsheet_question_usage_by_activity($component, $context);
-}
-
-/**
- * Load a {@link question_usage_by_activity} from the database, including
- * all its {@link question_attempt}s and all their steps.
- * @param int $qubaid the id of the usage to load.
- * @param question_usage_by_activity the usage that was loaded.
- */
-function signinsheet_load_questions_usage_by_activity($qubaid) {
-    global $DB;
-
-    $records = $DB->get_recordset_sql("
-            SELECT quba.id AS qubaid,
-                   quba.contextid,
-                   quba.component,
-                   quba.preferredbehaviour,
-                   qa.id AS questionattemptid,
-                   qa.questionusageid,
-                   qa.slot,
-                   qa.behaviour,
-                   qa.questionid,
-                   qa.variant,
-                   qa.maxmark,
-                   qa.minfraction,
-                   qa.maxfraction,
-                   qa.flagged,
-                   qa.questionsummary,
-                   qa.rightanswer,
-                   qa.responsesummary,
-                   qa.timemodified,
-                   qas.id AS attemptstepid,
-                   qas.sequencenumber,
-                   qas.state,
-                   qas.fraction,
-                   qas.timecreated,
-                   qas.userid,
-                   qasd.name,
-                   qasd.value
-              FROM {question_usages}            quba
-         LEFT JOIN {question_attempts}          qa   ON qa.questionusageid    = quba.id
-         LEFT JOIN {question_attempt_steps}     qas  ON qas.questionattemptid = qa.id
-         LEFT JOIN {question_attempt_step_data} qasd ON qasd.attemptstepid    = qas.id
-            WHERE  quba.id = :qubaid
-          ORDER BY qa.slot,
-                   qas.sequencenumber
-            ", array('qubaid' => $qubaid));
-
-    if (!$records->valid()) {
-        throw new coding_exception('Failed to load questions_usage_by_activity ' . $qubaid);
-    }
-
-    $quba = signinsheet_question_usage_by_activity::load_from_records($records, $qubaid);
-    $records->close();
-
-    return $quba;
-}
-
-/**
- *
- * @param int $signinsheet
- * @param int $groupid
- * @return string
- */
-function signinsheet_get_group_question_ids($signinsheet, $groupid = 0) {
-    global $DB;
-
-    if (!$groupid) {
-        $groupid = $signinsheet->groupid;
-    }
-
-    // This query only makes sense if it is restricted to a offline group.
-    if (!$groupid) {
-        return '';
-    }
-
-    $sql = "SELECT questionid
-              FROM {signinsheet_group_questions}
-             WHERE signinsheetid = :signinsheetid
-               AND offlinegroupid = :offlinegroupid
-          ORDER BY slot ASC ";
-
-    $params = array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $groupid);
-    $questionids = $DB->get_fieldset_sql($sql, $params);
-
-    return $questionids;
-}
-
-
 /**
  *
  * @param mixed $signinsheet The signinsheet
@@ -246,146 +156,6 @@ function signinsheet_get_empty_groups($signinsheet) {
         }
     }
     return $emptygroups;
-}
-
-
-/**
- * Get the slot for a question with a particular id.
- * @param object $signinsheet the signinsheet settings.
- * @param int $questionid the of a question in the signinsheet.
- * @return int the corresponding slot. Null if the question is not in the signinsheet.
- */
-function signinsheet_get_slot_for_question($signinsheet, $group, $questionid) {
-    $questionids = signinsheet_get_group_question_ids($signinsheet, $group->id);
-    foreach ($questionids as $key => $id) {
-        if ($id == $questionid) {
-            return $key + 1;
-        }
-    }
-    return null;
-}
-
-/**
- * Verify that the question exists, and the user has permission to use it.
- * Does not return. Throws an exception if the question cannot be used.
- * @param int $questionid The id of the question.
- */
-function signinsheet_require_question_use($questionid) {
-    global $DB;
-    $question = $DB->get_record('question', array('id' => $questionid), '*', MUST_EXIST);
-    question_require_capability_on($question, 'use');
-}
-
-/**
- * Add a question to a signinsheet
- *
- * Adds a question to a signinsheet by updating $signinsheet as well as the
- * signinsheet and signinsheet_slots tables. It also adds a page break if required.
- * @param int $questionid The id of the question to be added
- * @param object $signinsheet The extended signinsheet object as used by edit.php
- *      This is updated by this function
- * @param int $page Which page in signinsheet to add the question on. If 0 (default),
- *      add at the end
- * @param float $maxmark The maximum mark to set for this question. (Optional,
- *      defaults to question.defaultmark.
- * @return bool false if the question was already in the signinsheet
- */
-function signinsheet_add_signinsheet_question($questionid, $signinsheet, $page = 0, $maxmark = null) {
-    global $DB;
-
-    if (signinsheet_has_scanned_pages($signinsheet->id)) {
-        return false;
-    }
-
-    $slots = $DB->get_records('signinsheet_group_questions',
-            array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $signinsheet->groupid),
-            'slot', 'questionid, slot, page, id');
-    if (array_key_exists($questionid, $slots)) {
-        return false;
-    }
-
-    $trans = $DB->start_delegated_transaction();
-
-    $maxpage = 1;
-    $numonlastpage = 0;
-    foreach ($slots as $slot) {
-        if ($slot->page > $maxpage) {
-            $maxpage = $slot->page;
-            $numonlastpage = 1;
-        } else {
-            $numonlastpage += 1;
-        }
-    }
-
-    // Add the new question instance.
-    $slot = new stdClass();
-    $slot->signinsheetid = $signinsheet->id;
-    $slot->offlinegroupid = $signinsheet->groupid;
-    $slot->questionid = $questionid;
-
-    if ($maxmark !== null) {
-        $slot->maxmark = $maxmark;
-    } else {
-        $slot->maxmark = $DB->get_field('question', 'defaultmark', array('id' => $questionid));
-    }
-
-    if (is_int($page) && $page >= 1) {
-        // Adding on a given page.
-        $lastslotbefore = 0;
-        foreach (array_reverse($slots) as $otherslot) {
-            if ($otherslot->page > $page) {
-                // Increase the slot number of the other slot.
-                $DB->set_field('signinsheet_group_questions', 'slot', $otherslot->slot + 1, array('id' => $otherslot->id));
-            } else {
-                $lastslotbefore = $otherslot->slot;
-                break;
-            }
-        }
-        $slot->slot = $lastslotbefore + 1;
-        $slot->page = min($page, $maxpage + 1);
-
-    } else {
-        $lastslot = end($slots);
-        if ($lastslot) {
-            $slot->slot = $lastslot->slot + 1;
-        } else {
-            $slot->slot = 1;
-        }
-        if ($signinsheet->questionsperpage && $numonlastpage >= $signinsheet->questionsperpage) {
-            $slot->page = $maxpage + 1;
-        } else {
-            $slot->page = $maxpage;
-        }
-    }
-
-    $DB->insert_record('signinsheet_group_questions', $slot);
-    $trans->allow_commit();
-}
-
-/**
- * returns the maximum number of questions in a set of offline groups
- *
- * @param unknown_type $signinsheet
- * @param unknown_type $groups
- * @return Ambigous <number, unknown>
- */
-function signinsheet_get_maxquestions($signinsheet, $groups) {
-    global $DB;
-
-    $maxquestions = 0;
-    foreach ($groups as $group) {
-
-        $questionids = signinsheet_get_group_question_ids($signinsheet, $group->id);
-
-        list($qsql, $params) = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED);
-
-        $numquestions = $DB->count_records_sql("SELECT COUNT(id) FROM {question} WHERE qtype <> 'description' AND id $qsql",
-                                               $params);
-        if ($numquestions > $maxquestions) {
-            $maxquestions = $numquestions;
-        }
-    }
-    return $maxquestions;
 }
 
 /**
@@ -414,110 +184,6 @@ function signinsheet_save_page_corners($scannedpage, $corners) {
     }
 }
 
-/**
- * returns the maximum number of answers in the group questions of an signinsheet
- * @param unknown_type $signinsheet
- * @return number
- */
-function signinsheet_get_maxanswers($signinsheet, $groups = array()) {
-    global $CFG, $DB;
-
-    $groupids = array();
-    foreach ($groups as $group) {
-        $groupids[] = $group->id;
-    }
-
-    $sql = "SELECT DISTINCT(questionid)
-              FROM {signinsheet_group_questions}
-             WHERE signinsheetid = :signinsheetid
-               AND questionid > 0";
-
-    if (!empty($groupids)) {
-        list($gsql, $params) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED);
-        $sql .= " AND offlinegroupid " . $gsql;
-    } else {
-        $params = array();
-    }
-
-    $params['signinsheetid'] = $signinsheet->id;
-
-    $questionids = $DB->get_records_sql($sql, $params);
-    $questionlist = array_keys($questionids);
-
-    $counts = array();
-    if (!empty($questionlist)) {
-        foreach ($questionlist as $questionid) {
-            $sql = "SELECT COUNT(id)
-                      FROM {question_answers} qa
-                     WHERE qa.question = :questionid
-                    ";
-            $params = array('questionid' => $questionid);
-            $counts[] = $DB->count_records_sql($sql, $params);
-        }
-        return max($counts);
-    } else {
-        return 0;
-    }
-}
-
-
-/**
- * Repaginate the questions in a signinsheet
- * @param int $signinsheetid the id of the signinsheet to repaginate.
- * @param int $slotsperpage number of items to put on each page. 0 means unlimited.
- */
-function signinsheet_repaginate_questions($signinsheetid, $offlinegroupid, $slotsperpage) {
-    global $DB;
-    $trans = $DB->start_delegated_transaction();
-
-    $slots = $DB->get_records('signinsheet_group_questions',
-            array('signinsheetid' => $signinsheetid, 'offlinegroupid' => $offlinegroupid),
-            'slot');
-
-    $currentpage = 1;
-    $slotsonthispage = 0;
-    foreach ($slots as $slot) {
-        if ($slotsonthispage && $slotsonthispage == $slotsperpage) {
-            $currentpage += 1;
-            $slotsonthispage = 0;
-        }
-        if ($slot->page != $currentpage) {
-            $DB->set_field('signinsheet_group_questions', 'page', $currentpage,
-                    array('id' => $slot->id));
-        }
-        $slotsonthispage += 1;
-    }
-
-    $trans->allow_commit();
-}
-
-/**
- * Re-paginates the signinsheet layout
- *
- * @return string         The new layout string
- * @param string $layout  The string representing the signinsheet layout.
- * @param integer $perpage The number of questions per page
- * @param boolean $shuffle Should the questions be reordered randomly?
- */
-function signinsheet_shuffle_questions($questionids) {
-    srand((float)microtime() * 1000000); // For php < 4.2.
-    shuffle($questionids);
-    return $questionids;
-}
-
-/**
- * returns true if there are scanned pages for an offline quiz.
- * @param int $signinsheetid
- */
-function signinsheet_has_scanned_pages($signinsheetid) {
-    global $CFG, $DB;
-
-    $sql = "SELECT COUNT(id)
-              FROM {signinsheet_scanned_pages}
-             WHERE signinsheetid = :signinsheetid";
-    $params = array('signinsheetid' => $signinsheetid);
-    return $DB->count_records_sql($sql, $params) > 0;
-}
 
 /**
  *
@@ -543,11 +209,11 @@ function signinsheet_delete_scanned_page($page, $context) {
     }
 
     // JZ: also delete the image files associated with the deleted page.
-    if ($page->filename && $file = $fs->get_file($context->id, 'mod_signinsheet', 'imagefiles', 0, '/', $page->filename)) {
+    if ($page->filename && $file = $fs->get_file($context->id, 'mod_attendance', 'imagefiles', 0, '/', $page->filename)) {
         $file->delete();
     }
     if ($page->warningfilename &&
-        $file = $fs->get_file($context->id, 'mod_signinsheet', 'imagefiles', 0, '/', $page->warningfilename)) {
+        $file = $fs->get_file($context->id, 'mod_attendance', 'imagefiles', 0, '/', $page->warningfilename)) {
 
         $file->delete();
     }
@@ -568,44 +234,12 @@ function signinsheet_delete_scanned_p_page($page, $context) {
     $DB->delete_records('signinsheet_p_choices', array('scannedppageid' => $page->id));
 
     // JZ: also delete the image files associated with the deleted page.
-    if ($page->filename && $file = $fs->get_file($context->id, 'mod_signinsheet', 'imagefiles', 0, '/', $page->filename)) {
+    if ($page->filename && $file = $fs->get_file($context->id, 'mod_attendance', 'imagefiles', 0, '/', $page->filename)) {
         $file->delete();
     }
 }
 
-/**
- * returns the number of completed results for an offline quiz.
- * @param int $signinsheetid
- * @param int $courseid
- * @param boolean $onlystudents
- */
-function signinsheet_completed_results($signinsheetid, $courseid, $onlystudents = false) {
-    global $CFG, $DB;
 
-    if ($onlystudents) {
-        $coursecontext = context_course::instance($courseid);
-        $contextids = $coursecontext->get_parent_context_ids(true);
-        list($csql, $params) = $DB->get_in_or_equal($contextids, SQL_PARAMS_NAMED);
-        $params['signinsheetid'] = $signinsheetid;
-
-        $select = "SELECT COUNT(DISTINCT(u.id)) as counter
-                     FROM {user} u
-                     JOIN {role_assignments} ra ON ra.userid = u.id
-                LEFT JOIN {signinsheet_results} qa
-                           ON u.id = qa.userid
-                          AND qa.signinsheetid = :signinsheetid
-                          AND qa.status = 'complete'
-                    WHERE ra.contextid $csql
-                      AND qa.userid IS NOT NULL
-        ";
-
-        return $DB->count_records_sql($select, $params);
-    } else {
-        $params = array('signinsheetid' => $signinsheetid);
-        return $DB->count_records_select('signinsheet_results', "signinsheetid = :signinsheetid AND status = 'complete'",
-                                         $params, 'COUNT(id)');
-    }
-}
 
 /**
  * Delete an signinsheet result, including the questions_usage_by_activity corresponding to it.
@@ -639,158 +273,6 @@ function signinsheet_delete_result($resultid, $context) {
     }
 }
 
-/**
- * Save new maxgrade to a question instance
- *
- * Saves changes to the question grades in the signinsheet_group_questions table.
- * The grades of the questions in the group template qubas are also updated.
- * This function does not update 'sumgrades' in the signinsheet table.
- *
- * @param int $signinsheet  The signinsheet to update / add the instances for.
- * @param int $questionid  The id of the question
- * @param int grade    The maximal grade for the question
- */
-function signinsheet_update_question_instance($signinsheet, $questionid, $grade) {
-    global $DB;
-
-    // First change the maxmark of the question in all offline quiz groups.
-    $groupquestionids = $DB->get_fieldset_select('signinsheet_group_questions', 'id',
-                    'signinsheetid = :signinsheetid AND questionid = :questionid',
-                    array('signinsheetid' => $signinsheet->id, 'questionid' => $questionid));
-
-    foreach ($groupquestionids as $groupquestionid) {
-        $DB->set_field('signinsheet_group_questions', 'maxmark', $grade, array('id' => $groupquestionid));
-    }
-
-    $groups = $DB->get_records('signinsheet_groups', array('signinsheetid' => $signinsheet->id), 'number', '*', 0,
-                $signinsheet->numgroups);
-
-    // Now change the maxmark of the question instance in the template question usages of the signinsheet groups.
-    foreach ($groups as $group) {
-
-        if ($group->templateusageid) {
-            $templateusage = question_engine::load_questions_usage_by_activity($group->templateusageid);
-            $slots = $templateusage->get_slots();
-
-            $slot = 0;
-            foreach ($slots as $thisslot) {
-                if ($templateusage->get_question($thisslot)->id == $questionid) {
-                    $slot = $thisslot;
-                    break;
-                }
-            }
-            if ($slot) {
-                // Update the grade in the template usage.
-                question_engine::set_max_mark_in_attempts(new qubaid_list(array($group->templateusageid)), $slot, $grade);
-            }
-        }
-    }
-
-    // Now do the same for the qubas of the results of the offline quiz.
-    if ($results = $DB->get_records('signinsheet_results', array('signinsheetid' => $signinsheet->id))) {
-        foreach ($results as $result) {
-            if ($result->usageid > 0) {
-                $quba = question_engine::load_questions_usage_by_activity($result->usageid);
-                $slots = $quba->get_slots();
-
-                $slot = 0;
-                foreach ($slots as $thisslot) {
-                    if ($quba->get_question($thisslot)->id == $questionid) {
-                        $slot = $thisslot;
-                        break;
-                    }
-                }
-                if ($slot) {
-                    question_engine::set_max_mark_in_attempts(new qubaid_list(array($result->usageid)), $slot, $grade);
-
-                    // Now set the new sumgrades also in the offline quiz result.
-                    $newquba = question_engine::load_questions_usage_by_activity($result->usageid);
-                    $DB->set_field('signinsheet_results', 'sumgrades',  $newquba->get_total_mark(),
-                        array('id' => $result->id));
-                }
-            }
-        }
-    }
-}
-
-
-/**
- * Update the sumgrades field of the results in an offline quiz.
- *
- * @param object $signinsheet The signinsheet.
- */
-function signinsheet_update_all_attempt_sumgrades($signinsheet) {
-    global $DB;
-    $dm = new question_engine_data_mapper();
-    $timenow = time();
-
-    $sql = "UPDATE {signinsheet_results}
-               SET timemodified = :timenow,
-                   sumgrades = (
-                                {$dm->sum_usage_marks_subquery('usageid')}
-                               )
-             WHERE signinsheetid = :signinsheetid
-               AND timefinish <> 0";
-    $DB->execute($sql, array('timenow' => $timenow, 'signinsheetid' => $signinsheet->id));
-}
-
-/**
- * A {@link qubaid_condition} for finding all the question usages belonging to
- * a particular signinsheet. Used in editlib.php.
- *
- * @copyright  2010 The University of Vienna
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class result_qubaids_for_signinsheet extends qubaid_join {
-    public function __construct($signinsheetid, $offlinegroupid, $includepreviews = true, $onlyfinished = false) {
-        $where = 'quiza.signinsheetid = :signinsheetid AND quiza.offlinegroupid = :offlinegroupid';
-        if (!$includepreviews) {
-            $where .= ' AND preview = 0';
-        }
-        if ($onlyfinished) {
-            $where .= ' AND timefinish <> 0';
-        }
-
-        parent::__construct('{signinsheet_results} quiza', 'quiza.usageid', $where,
-                array('signinsheetid' => $signinsheetid, 'offlinegroupid' => $offlinegroupid));
-    }
-}
-
-/**
- * The signinsheet grade is the maximum that student's results are marked out of. When it
- * changes, the corresponding data in signinsheet_grades and signinsheet_feedback needs to be
- * rescaled. After calling this function, you probably need to call
- * signinsheet_update_all_attempt_sumgrades, signinsheet_update_all_final_grades and
- * signinsheet_update_grades.
- *
- * @param float $newgrade the new maximum grade for the signinsheet.
- * @param object $signinsheet the signinsheet we are updating. Passed by reference so its
- *      grade field can be updated too.
- * @return bool indicating success or failure.
- */
-function signinsheet_set_grade($newgrade, $signinsheet) {
-    global $DB;
-    // This is potentially expensive, so only do it if necessary.
-    if (abs($signinsheet->grade - $newgrade) < 1e-7) {
-        // Nothing to do.
-        return true;
-    }
-
-    // Use a transaction, so that on those databases that support it, this is safer.
-    $transaction = $DB->start_delegated_transaction();
-
-    // Update the signinsheet table.
-    $DB->set_field('signinsheet', 'grade', $newgrade, array('id' => $signinsheet->id));
-
-    $signinsheet->grade = $newgrade;
-
-    // Update grade item and send all grades to gradebook.
-    signinsheet_grade_item_update($signinsheet);
-    signinsheet_update_grades($signinsheet);
-
-    $transaction->allow_commit();
-    return true;
-}
 
 
 /**
@@ -801,8 +283,8 @@ function signinsheet_set_grade($newgrade, $signinsheet) {
 function signinsheet_get_js_module() {
     global $PAGE;
     return array(
-            'name' => 'mod_signinsheet',
-            'fullpath' => '/mod/signinsheet/module.js',
+            'name' => 'mod_attendance',
+            'fullpath' => '/mod/attendance/module.js',
             'requires' => array('base', 'dom', 'event-delegate', 'event-key',
                     'core_question_engine'),
             'strings' => array(
@@ -813,32 +295,6 @@ function signinsheet_get_js_module() {
     );
 }
 
-/**
- * Returns true if the student has access to results. Function doesn't check if there is a result.
- *
- * @param object signinsheet  The signinsheet object
- */
-function signinsheet_results_open($signinsheet) {
-
-    if ($signinsheet->timeclose and time() >= $signinsheet->timeclose) {
-        return false;
-    }
-    if ($signinsheet->timeopen and time() <= $signinsheet->timeopen) {
-        return false;
-    }
-
-    $options = mod_signinsheet_display_options::make_from_signinsheet($signinsheet);
-    // There has to be responses or (graded)sheetfeedback.
-
-    if ($options->attempt == question_display_options::HIDDEN and
-            $options->marks == question_display_options::HIDDEN and
-            $options->sheetfeedback == question_display_options::HIDDEN and
-            $options->gradedsheetfeedback == question_display_options::HIDDEN) {
-        return false;
-    } else {
-        return true;
-    }
-}
 
 /**
  * @deprecated User identification is now set in admin settings.
@@ -921,13 +377,13 @@ function signinsheet_add_group($signinsheetid, $groupnumber) {
 /**
  * Checks whether any list of participants have been created for a given signinsheet.
  *
- * @param unknown_type $signinsheet
+ * @param object $attendance
  * @return boolean
  */
-function signinsheet_partlist_created($signinsheet) {
+function signinsheet_partlist_created($attendance) {
     global $DB;
 
-    return $DB->count_records('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id)) > 0;
+    return $DB->count_records('attendance_ss_p_lists', array('attendanceid' => $attendance->id)) > 0;
 }
 
 
@@ -1080,188 +536,13 @@ function signinsheet_get_combined_reviewoptions($signinsheet) {
     return array($someoptions, $alloptions);
 }
 
-/**
- * Creates HTML code for a question edit button, used by editlib.php
- *
- * @param int $cmid the course_module.id for this signinsheet.
- * @param object $question the question.
- * @param string $returnurl url to return to after action is done.
- * @param string $contentbeforeicon some HTML content to be added inside the link, before the icon.
- * @return the HTML for an edit icon, view icon, or nothing for a question
- *      (depending on permissions).
- */
-function signinsheet_question_edit_button($cmid, $question, $returnurl, $contentaftericon = '') {
-    global $CFG, $OUTPUT;
-
-    // Minor efficiency saving. Only get strings once, even if there are a lot of icons on one page.
-    static $stredit = null;
-    static $strview = null;
-    if ($stredit === null) {
-        $stredit = get_string('edit');
-        $strview = get_string('view');
-    }
-
-    // What sort of icon should we show?
-    $action = '';
-    if (!empty($question->id) &&
-            (question_has_capability_on($question, 'edit', $question->category) ||
-                    question_has_capability_on($question, 'move', $question->category))
-    ) {
-        $action = $stredit;
-        $icon = '/t/edit';
-    } else if (!empty($question->id) &&
-            question_has_capability_on($question, 'view', $question->category)) {
-        $action = $strview;
-        $icon = '/i/info';
-    }
-
-    // Build the icon.
-    if ($action) {
-        if ($returnurl instanceof moodle_url) {
-            $returnurl = str_replace($CFG->wwwroot, '', $returnurl->out(false));
-        }
-        $questionparams = array('returnurl' => $returnurl, 'cmid' => $cmid, 'id' => $question->id);
-        $questionurl = new moodle_url("$CFG->wwwroot/question/question.php", $questionparams);
-        return '<a title="' . $action . '" href="' . $questionurl->out() . '"><img src="' .
-                $OUTPUT->pix_url($icon) . '" alt="' . $action . '" />' . $contentaftericon .
-                '</a>';
-    } else {
-        return $contentaftericon;
-    }
-}
-
-/**
- * Creates HTML code for a question preview button.
- *
- * @param object $signinsheet the signinsheet settings
- * @param object $question the question
- * @param bool $label if true, show the preview question label after the icon
- * @return the HTML for a preview question icon.
- */
-function signinsheet_question_preview_button($signinsheet, $question, $label = false) {
-    global $CFG, $OUTPUT;
-    if (property_exists($question, 'category') &&
-            !question_has_capability_on($question, 'use', $question->category)) {
-        return '';
-    }
-
-    $url = signinsheet_question_preview_url($signinsheet, $question);
-
-    // Do we want a label?
-    $strpreviewlabel = '';
-    if ($label) {
-        $strpreviewlabel = get_string('preview', 'attendance');
-    }
-
-    // Build the icon.
-    $strpreviewquestion = get_string('previewquestion', 'attendance');
-    $image = $OUTPUT->pix_icon('t/preview', $strpreviewquestion);
-
-    $action = new popup_action('click', $url, 'questionpreview',
-            question_preview_popup_params());
-
-    return $OUTPUT->action_link($url, $image, $action, array('title' => $strpreviewquestion));
-}
-
-/**
- * @param object $signinsheet the signinsheet settings
- * @param object $question the question
- * @return moodle_url to preview this question with the options from this signinsheet.
- */
-function signinsheet_question_preview_url($signinsheet, $question) {
-    // Get the appropriate display options.
-    $displayoptions = mod_signinsheet_display_options::make_from_signinsheet($signinsheet);
-
-    $maxmark = null;
-    if (isset($question->maxmark)) {
-        $maxmark = $question->maxmark;
-    }
-
-    // Work out the correct preview URL.
-    return question_preview_url($question->id, null,
-            $maxmark, $displayoptions);
-}
-
-
-/**
- * Retrieves a template question usage for an offline group. Creates a new template if there is none.
- * While creating question usage it shuffles the group questions if shuffleanswers is created.
- *
- * @param object $signinsheet
- * @param object $group
- * @param object $context
- * @return question_usage_by_activity
- */
-function signinsheet_get_group_template_usage($signinsheet, $group, $context) {
-    global $CFG, $DB;
-
-    if (!empty($group->templateusageid) && $group->templateusageid > 0) {
-        $templateusage = question_engine::load_questions_usage_by_activity($group->templateusageid);
-    } else {
-
-        $questionids = signinsheet_get_group_question_ids($signinsheet, $group->id);
-
-        if ($signinsheet->shufflequestions) {
-            $signinsheet->groupid = $group->id;
-
-            $questionids = signinsheet_shuffle_questions($questionids);
-        }
-
-        // We have to use our own class s.t. we can use the clone function to create results.
-        $templateusage = signinsheet_make_questions_usage_by_activity('mod_signinsheet', $context);
-        $templateusage->set_preferred_behaviour('immediatefeedback');
-
-        if (!$questionids) {
-            print_error(get_string('noquestionsfound', 'attendance'), 'view.php?q='.$signinsheet->id);
-        }
-
-        // Gets database raw data for the questions.
-        $questiondata = question_load_questions($questionids);
-
-        // Get the question instances for initial markmarks.
-        $sql = "SELECT questionid, maxmark
-                  FROM {signinsheet_group_questions}
-                 WHERE signinsheetid = :signinsheetid
-                   AND offlinegroupid = :offlinegroupid ";
-
-        $groupquestions = $DB->get_records_sql($sql,
-                array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $group->id));
-
-        foreach ($questionids as $questionid) {
-            if ($questionid) {
-                // Convert the raw data of multichoice questions to a real question definition object.
-                if (!$signinsheet->shuffleanswers) {
-                    $questiondata[$questionid]->options->shuffleanswers = false;
-                }
-                $question = question_bank::make_question($questiondata[$questionid]);
-
-                // We only add multichoice questions which are needed for grading.
-                if ($question->get_type_name() == 'multichoice' || $question->get_type_name() == 'multichoiceset') {
-                    $templateusage->add_question($question, $groupquestions[$question->id]->maxmark);
-                }
-            }
-        }
-
-        // Create attempts for all questions (fixes order of the answers if shuffleanswers is active).
-        $templateusage->start_all_questions();
-
-        // Save the template question usage to the DB.
-        question_engine::save_questions_usage_by_activity($templateusage);
-
-        // Save the templateusage-ID in the signinsheet_groups table.
-        $group->templateusageid = $templateusage->get_id();
-        $DB->set_field('signinsheet_groups', 'templateusageid', $group->templateusageid, array('id' => $group->id));
-    } // End else.
-    return $templateusage;
-}
-
 
 /**
  * Deletes the PDF forms of an signinsheet.
  *
- * @param object $signinsheet
+ * @param object $attendance
  */
-function signinsheet_delete_pdf_forms($signinsheet) {
+function signinsheet_delete_pdf_forms($attendance) {
     global $DB;
 
     $fs = get_file_storage();
@@ -1271,146 +552,31 @@ function signinsheet_delete_pdf_forms($signinsheet) {
         $context = context_module::instance($signinsheet->cmid);
 
         // Delete PDF documents.
-        $files = $fs->get_area_files($context->id, 'mod_signinsheet', 'pdfs');
+        $files = $fs->get_area_files($context->id, 'mod_attendance', 'participants');
         foreach ($files as $file) {
             $file->delete();
         }
     }
     // Delete the file names in the signinsheet groups.
-    $DB->set_field('signinsheet_groups', 'questionfilename', null, array('signinsheetid' => $signinsheet->id));
-    $DB->set_field('signinsheet_groups', 'answerfilename', null, array('signinsheetid' => $signinsheet->id));
-    $DB->set_field('signinsheet_groups', 'correctionfilename', null, array('signinsheetid' => $signinsheet->id));
+    $DB->set_field('signinsheet_groups', 'questionfilename', null, array('attendanceid' => $attendance->id));
+    $DB->set_field('signinsheet_groups', 'answerfilename', null, array('attendanceid' => $attendance->id));
+    $DB->set_field('signinsheet_groups', 'correctionfilename', null, array('attendanceid' => $attendance->id));
 
     // Set signinsheet->docscreated to 0.
     $signinsheet->docscreated = 0;
-    $DB->set_field('signinsheet', 'docscreated', 0, array('id' => $signinsheet->id));
+    $DB->set_field('signinsheet', 'docscreated', 0, array('id' => $attendance->id));
     return $signinsheet;
 }
 
-/**
- * Deletes the question usages by activity for an signinsheet. This function must not be
- * called if the offline quiz has attempts or scanned pages
- *
- * @param object $signinsheet
- */
-function signinsheet_delete_template_usages($signinsheet, $deletefiles = true) {
-    global $CFG, $DB, $OUTPUT;
-
-    if ($groups = $DB->get_records('signinsheet_groups',
-                                   array('signinsheetid' => $signinsheet->id), 'number', '*', 0, $signinsheet->numgroups)) {
-        foreach ($groups as $group) {
-            if ($group->templateusageid) {
-                question_engine::delete_questions_usage_by_activity($group->templateusageid);
-                $group->templateusageid = 0;
-                $DB->set_field('signinsheet_groups', 'templateusageid', 0, array('id' => $group->id));
-            }
-        }
-    }
-
-    // Also delete the PDF forms if they have been created.
-    if ($deletefiles) {
-        return signinsheet_delete_pdf_forms($signinsheet);
-    } else {
-        return $signinsheet;
-    }
-}
-
-/**
- * Prints a preview for a question in an signinsheet to Stdout.
- *
- * @param object $question
- * @param array $choiceorder
- * @param int $number
- * @param object $context
- */
-function signinsheet_print_question_preview($question, $choiceorder, $number, $context, $page) {
-    global $CFG, $DB;
-
-    require_once($CFG->dirroot . '/filter/mathjaxloader/filter.php' );
-
-    $letterstr = 'abcdefghijklmnopqrstuvwxyz';
-
-    echo '<div id="q' . $question->id . '" class="preview">
-            <div class="question">
-              <span class="number">';
-
-    if ($question->qtype != 'description') {
-        echo $number.')&nbsp;&nbsp;';
-    }
-    echo '    </span>';
-
-    $text = question_rewrite_question_preview_urls($question->questiontext, $question->id,
-            $question->contextid, 'question', 'questiontext', $question->id,
-            $context->id, 'attendance');
-
-    // Remove leading paragraph tags because the cause a line break after the question number.
-    $text = preg_replace('!^<p>!i', '', $text);
-
-    // Filter only for tex formulas.
-    $texfilter = null;
-    $mathjaxfilter = null;
-    $filters = filter_get_active_in_context($context);
-
-    if (array_key_exists('mathjaxloader', $filters)) {
-        $mathjaxfilter = new filter_mathjaxloader($context, array());
-        $mathjaxfilter->setup($page, $context);
-    }
-    if (array_key_exists('tex', $filters)) {
-        $texfilter = new filter_tex($context, array());
-    }
-    if ($mathjaxfilter) {
-        $text = $mathjaxfilter->filter($text);
-        if ($question->qtype != 'description') {
-            foreach ($choiceorder as $key => $answer) {
-                $question->options->answers[$answer]->answer = $mathjaxfilter->filter($question->options->answers[$answer]->answer);
-            }
-        }
-    } else if ($texfilter) {
-        $text = $texfilter->filter($text);
-        if ($question->qtype != 'description') {
-            foreach ($choiceorder as $key => $answer) {
-                $question->options->answers[$answer]->answer = $texfilter->filter($question->options->answers[$answer]->answer);
-            }
-        }
-    }
-
-    echo $text;
-
-    echo '  </div>';
-    if ($question->qtype != 'description') {
-        echo '  <div class="grade">';
-        echo '(' . get_string('marks', 'quiz') . ': ' . ($question->maxmark + 0) . ')';
-        echo '  </div>';
-
-        foreach ($choiceorder as $key => $answer) {
-            $answertext = $question->options->answers[$answer]->answer;
-
-            // Remove all HTML comments (typically from MS Office).
-            $answertext = preg_replace("/<!--.*?--\s*>/ms", "", $answertext);
-            // Remove all paragraph tags because they mess up the layout.
-            $answertext = preg_replace("/<p[^>]*>/ms", "", $answertext);
-            $answertext = preg_replace("/<\/p[^>]*>/ms", "", $answertext);
-            // rewrite image URLs
-            $answertext = question_rewrite_question_preview_urls($answertext, $question->id,
-            $question->contextid, 'question', 'answer', $question->options->answers[$answer]->id,
-            $context->id, 'signinsheet');
-
-            echo "<div class=\"answer\">$letterstr[$key])&nbsp;&nbsp;";
-            echo $answertext;
-            echo "</div>";
-        }
-    }
-    echo "</div>";
-}
 
 /**
  * Prints a list of participants to Stdout.
  *
- * @param unknown_type $signinsheet
+ * @param object $attendance
  * @param unknown_type $coursecontext
  * @param unknown_type $systemcontext
  */
-function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemcontext) {
+function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontext) {
     global $CFG, $COURSE, $DB, $OUTPUT;
     signinsheet_load_useridentification();
     $signinsheetconfig = get_config('attendance');
@@ -1424,13 +590,13 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     $lists = $DB->get_records_sql("
             SELECT id, number, name
               FROM {attendance_ss_p_lists}
-             WHERE signinsheetid = :signinsheetid
+             WHERE attendanceid = :attendanceid
           ORDER BY number ASC",
-            array('signinsheetid' => $signinsheet->id));
+            array('attendanceid' => $attendance->id));
 
     // First get roleids for students from leagcy.
-    if (!$roles = get_roles_with_capability('mod/signinsheet:attempt', CAP_ALLOW, $systemcontext)) {
-        print_error("No roles with capability 'mod/signinsheet:attempt' defined in system context");
+    if (!$roles = get_roles_with_capability('mod/attendance_signinsheet:attempt', CAP_ALLOW, $systemcontext)) {
+        print_error("No roles with capability 'mod/attendance_signinsheet:attempt' defined in system context");
     }
 
     $roleids = array();
@@ -1444,32 +610,32 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
 
     $sql = "SELECT p.id, p.userid, p.listid, u.".$signinsheetconfig->ID_field.", u.firstname, u.lastname,
                    u.alternatename, u.middlename, u.firstnamephonetic, u.lastnamephonetic, u.picture, p.checked
-              FROM {signinsheet_participants} p,
+              FROM {attendance_ss_participants} p,
                    {attendance_ss_p_lists} pl,
                    {user} u,
                    {role_assignments} ra
              WHERE p.listid = pl.id
                AND p.userid = u.id
                AND ra.userid=u.id
-               AND pl.signinsheetid = :signinsheetid
+               AND pl.attendanceid = :attendanceid
                AND ra.contextid $csql
                AND ra.roleid $rsql";
 
-    $params['signinsheetid'] = $signinsheet->id;
+    $params['attendanceid'] = $attendance->id;
     if (!empty($listid)) {
         $sql .= " AND p.listid = :listid";
         $params['listid'] = $listid;
     }
 
     $countsql = "SELECT COUNT(*)
-                   FROM {signinsheet_participants} p,
+                   FROM {attendance_ss_participants} p,
                         {attendance_ss_p_lists} pl,
                         {user} u
                   WHERE p.listid = pl.id
                     AND p.userid = u.id
-                    AND pl.signinsheetid = :signinsheetid";
+                    AND pl.attendanceid = :attendanceid";
 
-    $cparams = array('signinsheetid' => $signinsheet->id);
+    $cparams = array('attendanceid' => $attendance->id);
     if (!empty($listid)) {
         $countsql .= " AND p.listid = :listid";
         $cparams['listid'] = $listid;
@@ -1483,7 +649,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
             'pagesize' => $pagesize,
             'strreallydel' => '');
 
-    $table = new signinsheet_partlist_table('mod-signinsheet-participants', 'participants.php', $tableparams);
+    $table = new signinsheet_partlist_table('mod-attendance-participants', 'participants.php', $tableparams);
 
     // Define table columns.
     $tablecolumns = array('checkbox', 'picture', 'fullname', $signinsheetconfig->ID_field, 'number', 'attempt', 'checked');
@@ -1493,7 +659,7 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
 
     $table->define_columns($tablecolumns);
     $table->define_headers($tableheaders);
-    $table->define_baseurl($CFG->wwwroot.'/mod/signinsheet/participants.php?mode=attendances&amp;q=' .
+    $table->define_baseurl($CFG->wwwroot.'/mod/attendance/participants.php?mode=attendances&amp;q=' .
             $signinsheet->id . '&amp;checkoption=' . $checkoption . '&amp;pagesize=' . $pagesize. '&amp;listid=' . $listid);
 
     $table->sortable(true);
@@ -1547,9 +713,9 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
     $sql = "SELECT COUNT(*)
               FROM {signinsheet_results}
              WHERE userid = :userid
-               AND signinsheetid = :signinsheetid
+               AND attendanceid = :attendanceid
                AND status = 'complete'";
-    $params = array('signinsheetid' => $signinsheet->id);
+    $params = array('attendanceid' => $attendance->id);
     if ($participants) {
         foreach ($participants as $participant) {
             $user = $DB->get_record('user', array('id' => $participant->userid));
@@ -1569,11 +735,11 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
                     $userlink,
                     $participant->{$signinsheetconfig->ID_field},
                     $lists[$participant->listid]->name,
-                    $attempt ? "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/tick.gif\" alt=\"" .
-                    get_string('attemptexists', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
+                    $attempt ? "<img src=\"$CFG->wwwroot/mod/attendance/pix/tick.gif\" alt=\"" .
+                    get_string('attemptexists', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/attendance/pix/cross.gif\" alt=\"" .
                     get_string('noattemptexists', 'attendance') . "\">",
-                    $participant->checked ? "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/tick.gif\" alt=\"" .
-                    get_string('ischecked', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/signinsheet/pix/cross.gif\" alt=\"" .
+                    $participant->checked ? "<img src=\"$CFG->wwwroot/mod/attendance/pix/tick.gif\" alt=\"" .
+                    get_string('ischecked', 'attendance') . "\">" : "<img src=\"$CFG->wwwroot/mod/attendance/pix/cross.gif\" alt=\"" .
                     get_string('isnotchecked', 'attendance') . "\">"
                     );
             switch ($checkoption) {
@@ -1661,12 +827,12 @@ function signinsheet_print_partlist($signinsheet, &$coursecontext, &$systemconte
 /**
  * Serves a list of participants as a file.
  *
- * @param unknown_type $signinsheet
+ * @param object $attendance_ss
  * @param unknown_type $fileformat
  * @param unknown_type $coursecontext
  * @param unknown_type $systemcontext
  */
-function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontext, &$systemcontext) {
+function signinsheet_download_partlist($attendance_ss, $fileformat, &$coursecontext, &$systemcontext) {
     global $CFG, $DB, $COURSE;
 
     signinsheet_load_useridentification();
@@ -1675,8 +841,8 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
     $filename = clean_filename(get_string('participants', 'attendance') . $signinsheet->id);
 
     // First get roleids for students from leagcy.
-    if (!$roles = get_roles_with_capability('mod/signinsheet:attempt', CAP_ALLOW, $systemcontext)) {
-        print_error("No roles with capability 'mod/signinsheet:attempt' defined in system context");
+    if (!$roles = get_roles_with_capability('mod/attendance_signinsheet:attempt', CAP_ALLOW, $systemcontext)) {
+        print_error("No roles with capability 'mod/attendance_signinsheet:attempt' defined in system context");
     }
 
     $roleids = array();
@@ -1691,18 +857,18 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
     $sql = "SELECT p.id, p.userid, p.listid, u." . $signinsheetconfig->ID_field . ", u.firstname, u.lastname,
                    u.alternatename, u.middlename, u.firstnamephonetic, u.lastnamephonetic,
                    u.picture, p.checked
-             FROM {signinsheet_participants} p,
+             FROM {attendance_ss_participants} p,
                   {attendance_ss_p_lists} pl,
                   {user} u,
                   {role_assignments} ra
             WHERE p.listid = pl.id
               AND p.userid = u.id
               AND ra.userid=u.id
-              AND pl.signinsheetid = :signinsheetid
+              AND pl.attendanceid = :attendanceid
               AND ra.contextid $csql
               AND ra.roleid $rsql";
 
-    $params['signinsheetid'] = $signinsheet->id;
+    $params['attendanceid'] = $attendance->id;
 
     // Define table headers.
     $tableheaders = array(get_string('fullname'),
@@ -1804,7 +970,7 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
         echo $headers . " \n";
     }
 
-    $lists = $DB->get_records('attendance_ss_p_lists', array('signinsheetid' => $signinsheet->id));
+    $lists = $DB->get_records('attendance_ss_p_lists', array('attendance_ssid' => $attendance_ss->id));
     $participants = $DB->get_records_sql($sql, $params);
     if ($participants) {
         foreach ($participants as $participant) {
@@ -1813,9 +979,9 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
             $sql = "SELECT COUNT(*)
                       FROM {signinsheet_results}
                      WHERE userid = :userid
-                       AND signinsheetid = :signinsheetid
+                       AND attendanceid = :attendanceid
                        AND status = 'complete'";
-            if ($DB->count_records_sql($sql, array('userid' => $userid, 'signinsheetid' => $signinsheet->id)) > 0) {
+            if ($DB->count_records_sql($sql, array('userid' => $userid, 'attendanceid' => $attendance->id)) > 0) {
                 $attempt = true;
             }
             $row = array(
@@ -1845,306 +1011,3 @@ function signinsheet_download_partlist($signinsheet, $fileformat, &$coursecontex
     exit;
 }
 
-/**
- * Creates a textual representation of a question for display.
- *
- * @param object $question A question object from the database questions table
- * @param bool $showicon If true, show the question's icon with the question. False by default.
- * @param bool $showquestiontext If true (default), show question text after question name.
- *       If false, show only question name.
- * @param bool $return If true (default), return the output. If false, print it.
- */
-function signinsheet_question_tostring($question, $showicon = false,
-        $showquestiontext = true, $return = true, $shorttitle = false) {
-    global $COURSE;
-
-    $result = '';
-
-    $formatoptions = new stdClass();
-    $formatoptions->noclean = true;
-    $formatoptions->para = false;
-
-    $questiontext = strip_tags(question_utils::to_plain_text($question->questiontext, $question->questiontextformat,
-                                                             array('noclean' => true, 'para' => false)));
-    $questiontitle = strip_tags(format_text($question->name, $question->questiontextformat, $formatoptions, $COURSE->id));
-
-    $result .= '<span class="questionname" title="' . $questiontitle . '">';
-    if ($shorttitle && strlen($questiontitle) > 25) {
-        $questiontitle = shorten_text($questiontitle, 25, false, '...');
-    }
-
-    if ($showicon) {
-        $result .= print_question_icon($question, true);
-        echo ' ';
-    }
-
-    if ($shorttitle) {
-        $result .= $questiontitle;
-    } else {
-        $result .= shorten_text(format_string($question->name), 200) . '</span>';
-    }
-
-    if ($showquestiontext) {
-        $result .= '<span class="questiontext" title="' . $questiontext . '">';
-
-        $questiontext = shorten_text($questiontext, 200);
-
-        if (!empty($questiontext)) {
-            $result .= $questiontext;
-        } else {
-            $result .= '<span class="error">';
-            $result .= get_string('questiontextisempty', 'attendance');
-            $result .= '</span>';
-        }
-        $result .= '</span>';
-    }
-    if ($return) {
-        return $result;
-    } else {
-        echo $result;
-    }
-}
-/**
- * Add a question to a signinsheet group
- *
- * Adds a question to a signinsheet by updating $signinsheet as well as the
- * signinsheet and signinsheet_question_instances tables. It also adds a page break
- * if required.
- * @param int $id The id of the question to be added
- * @param object $signinsheet The extended signinsheet object as used by edit.php
- *      This is updated by this function
- * @param int $page Which page in signinsheet to add the question on. If 0 (default),
- *      add at the end
- * @return bool false if the question was already in the signinsheet
- */
-function signinsheet_add_questionlist_to_group($questionids, $signinsheet, $offlinegroup,
-        $fromofflinegroup = null, $maxmarks = null) {
-    global $DB;
-
-    if (signinsheet_has_scanned_pages($signinsheet->id)) {
-        return false;
-    }
-
-    // Don't add the same question twice.
-    foreach ($questionids as $questionid) {
-        $slots = $DB->get_records('signinsheet_group_questions',
-                array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $offlinegroup->id),
-                'slot', 'questionid, slot, page, id');
-
-        if (array_key_exists($questionid, $slots)) {
-            continue;
-        }
-
-        $trans = $DB->start_delegated_transaction();
-        // If the question is already in another group, take the maxmark of that.
-        $maxmark = null;
-        if ($fromofflinegroup && $oldmaxmark = $DB->get_field('signinsheet_group_questions', 'maxmark',
-            array('signinsheetid' => $signinsheet->id,
-            'offlinegroupid' => $fromofflinegroup,
-            'questionid' => $questionid))) {
-            $maxmark = $oldmaxmark;
-        } else if ($maxmarks && array_key_exists($questionid, $maxmarks)) {
-            $maxmark = $maxmarks[$questionid];
-        }
-
-        $maxpage = 1;
-        $numonlastpage = 0;
-        foreach ($slots as $slot) {
-            if ($slot->page > $maxpage) {
-                $maxpage = $slot->page;
-                $numonlastpage = 1;
-            } else {
-                $numonlastpage += 1;
-            }
-        }
-
-        // Add the new question instance.
-        $slot = new stdClass();
-        $slot->signinsheetid = $signinsheet->id;
-        $slot->offlinegroupid = $offlinegroup->id;
-        $slot->questionid = $questionid;
-
-        if ($maxmark !== null) {
-            $slot->maxmark = $maxmark;
-        } else {
-            $slot->maxmark = $DB->get_field('question', 'defaultmark', array('id' => $questionid));
-        }
-
-        $lastslot = end($slots);
-        if ($lastslot) {
-            $slot->slot = $lastslot->slot + 1;
-        } else {
-            $slot->slot = 1;
-        }
-        $slot->page = 0;
-
-        if (!$slot->page) {
-            if ($signinsheet->questionsperpage && $numonlastpage >= $signinsheet->questionsperpage) {
-                $slot->page = $maxpage + 1;
-            } else {
-                $slot->page = $maxpage;
-            }
-        }
-        $DB->insert_record('signinsheet_group_questions', $slot);
-        $trans->allow_commit();
-    }
-}
-
-/**
- * Randomly add a number of multichoice questions to an signinsheet group.
- *
- * @param unknown_type $signinsheet
- * @param unknown_type $addonpage
- * @param unknown_type $categoryid
- * @param unknown_type $number
- * @param unknown_type $includesubcategories
- */
-function signinsheet_add_random_questions($signinsheet, $offlinegroup, $categoryid,
-        $number, $recurse, $preventsamequestion) {
-    global $DB;
-
-    $category = $DB->get_record('question_categories', array('id' => $categoryid));
-    if (!$category) {
-        print_error('invalidcategoryid', 'error');
-    }
-
-    $catcontext = context::instance_by_id($category->contextid);
-    require_capability('moodle/question:useall', $catcontext);
-
-    if ($recurse) {
-        $categoryids = question_categorylist($category->id);
-    } else {
-        $categoryids = array($category->id);
-    }
-
-    list($qcsql, $qcparams) = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED, 'qc');
-
-    $sql = "SELECT id
-              FROM {question} q
-             WHERE q.category $qcsql
-               AND q.parent = 0
-               AND q.hidden = 0
-               AND q.qtype IN ('multichoice', 'multichoiceset') ";
-    if (!$preventsamequestion) {
-        // Find all questions in the selected categories that are not in the offline group yet.
-        $sql .= "AND NOT EXISTS (SELECT 1
-                                   FROM {signinsheet_group_questions} ogq
-                                  WHERE ogq.questionid = q.id
-                                    AND ogq.signinsheetid = :signinsheetid
-                                    AND ogq.offlinegroupid = :offlinegroupid)";
-    } else {
-        // Find all questions in the selected categories that are not in the offline test yet.
-        $sql .= "AND NOT EXISTS (SELECT 1
-                                   FROM {signinsheet_group_questions} ogq
-                                  WHERE ogq.questionid = q.id
-                                    AND ogq.signinsheetid = :signinsheetid)";
-    }
-    $qcparams['signinsheetid'] = $signinsheet->id;
-    $qcparams['offlinegroupid'] = $offlinegroup->id;
-
-    $questionids = $DB->get_fieldset_sql($sql, $qcparams);
-    shuffle($questionids);
-
-    $chosenids = array();
-    while (($questionid = array_shift($questionids)) && $number > 0) {
-        $chosenids[] = $questionid;
-        $number -= 1;
-    }
-
-    $maxmarks = array();
-    if ($chosenids) {
-        // Get the old maxmarks in case questions are already in other signinsheet groups.
-        list($qsql, $params) = $DB->get_in_or_equal($chosenids, SQL_PARAMS_NAMED);
-
-        $sql = "SELECT id, questionid, maxmark
-                  FROM {signinsheet_group_questions}
-                 WHERE signinsheetid = :signinsheetid
-                   AND questionid $qsql";
-        $params['signinsheetid'] = $signinsheet->id;
-
-        if ($slots = $DB->get_records_sql($sql, $params)) {
-            foreach ($slots as $slot) {
-                if (!array_key_exists($slot->questionid, $maxmarks)) {
-                    $maxmarks[$slot->questionid] = $slot->maxmark;
-                }
-            }
-        }
-    }
-
-    signinsheet_add_questionlist_to_group($chosenids, $signinsheet, $offlinegroup, null, $maxmarks);
-}
-
-/**
- *
- * @param unknown $signinsheet
- * @param unknown $questionids
- */
-function signinsheet_remove_questionlist($signinsheet, $questionids) {
-    global $DB;
-
-    // Go through the question IDs and remove them if they exist.
-    // We do a DB commit after each question ID to make things simpler.
-    foreach ($questionids as $questionid) {
-        // Retrieve the slots indexed by id.
-        $slots = $DB->get_records('signinsheet_group_questions',
-                array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $signinsheet->groupid),
-                'slot');
-
-        // Build an array with slots indexed by questionid and indexed by slot number.
-        $questionslots = array();
-        $slotsinorder = array();
-        foreach ($slots as $slot) {
-            $questionslots[$slot->questionid] = $slot;
-            $slotsinorder[$slot->slot] = $slot;
-        }
-
-        if (!array_key_exists($questionid, $questionslots)) {
-            continue;
-        }
-
-        $slot = $questionslots[$questionid];
-
-        $nextslot = null;
-        $prevslot = null;
-        if (array_key_exists($slot->slot + 1, $slotsinorder)) {
-            $nextslot = $slotsinorder[$slot->slot + 1];
-        }
-        if (array_key_exists($slot->slot - 1, $slotsinorder)) {
-            $prevslot = $slotsinorder[$slot->slot - 1];
-        }
-        $lastslot = end($slotsinorder);
-
-        $trans = $DB->start_delegated_transaction();
-
-        // Reduce the page numbers of the following slots if there is no previous slot
-        // or the page number of the previous slot is smaller than the page number of the current slot.
-        $removepage = false;
-        if ($nextslot && $nextslot->page > $slot->page) {
-            if (!$prevslot || $prevslot->page < $slot->page) {
-                $removepage = true;
-            }
-        }
-
-        // Delete the slot.
-        $DB->delete_records('signinsheet_group_questions',
-                array('signinsheetid' => $signinsheet->id, 'offlinegroupid' => $signinsheet->groupid,
-                      'id' => $slot->id));
-
-        // Reduce the slot number in the following slots if there are any.
-        // Also reduce the page number if necessary.
-        if ($nextslot) {
-            for ($curslotnr = $nextslot->slot; $curslotnr <= $lastslot->slot; $curslotnr++) {
-                if ($slotsinorder[$curslotnr]) {
-                    if ($removepage) {
-                        $slotsinorder[$curslotnr]->page = $slotsinorder[$curslotnr]->page - 1;
-                    }
-                    // Reduce the slot number by one.
-                    $slotsinorder[$curslotnr]->slot = $slotsinorder[$curslotnr]->slot - 1;
-                    $DB->update_record('signinsheet_group_questions', $slotsinorder[$curslotnr]);
-                }
-            }
-        }
-
-        $trans->allow_commit();
-    }
-}
