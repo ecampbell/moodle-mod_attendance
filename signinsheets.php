@@ -144,7 +144,7 @@ switch($action) {
         $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
         $title = get_string('signinsheetparticipantsmanage', 'attendance').' :: ' .format_string($course->fullname);
         $header = new mod_attendance_header($att, $title);
-        echo $output->header();
+        // echo $output->header();
         echo $output->render($header);
         echo $output->render($tabs);
 
@@ -154,11 +154,11 @@ switch($action) {
         ?>
 
         <div class="singlebutton" align="center">
-            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheet.php" ?>" method="post">
+            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets.php" ?>" method="post">
                 <div>
                     <input type="hidden" name="att" value="<?php echo $att->id ?>" />
                     <input type="hidden" name="forcenew" value="1" />
-                    <input type="hidden" name="action" value="manage" />
+                    <input type="hidden" name="action" value="10" />
                     <button type="submit"
                     onClick='return confirm("<?php echo get_string('signinsheetreallydeleteupdatepdf', 'attendance') ?>")' 
                     class="btn btn-secondary">
@@ -217,11 +217,11 @@ switch($action) {
 
         // Only print headers and tabs if not asked to download data.
         if (!$download) {
-            echo $output->header();
-            echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
+            // echo $output->header();
+            // echo $output->heading(get_string('signinsheetforthecourse', 'attendance') . ' :: ' . format_string($course->fullname));
             // echo $output->render($tabs);
             // echo $output->render($sesstable);
-            echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
+            // echo $OUTPUT->heading_with_help(get_string('signinsheetcreatepdfsparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
         }
 
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
@@ -264,7 +264,7 @@ switch($action) {
         }
 
         if ($redirect) {
-            redirect('signinsheets.php?action=manage&amp;q=' . $signinsheet->id, get_string('signinsheetcreatepdffirst', 'attendance'));
+            redirect('signinsheets.php?action=9&amp;q=' . $signinsheet->id, get_string('signinsheetcreatepdffirst', 'attendance'));
         }
 
         // Print headers and tabs.
@@ -380,16 +380,16 @@ switch($action) {
                     $OUTPUT->notification(get_string('signinsheetnopages', 'attendance'));
                 }
                 remove_dir($tempdir);
-                echo $OUTPUT->continue_button("$CFG->wwwroot/mod/attendance/signinsheets.php?q=$signinsheet->id&amp;action=upload");
+                echo $OUTPUT->continue_button("$CFG->wwwroot/mod/attendance/signinsheets.php?q=$signinsheet->id&amp;action=8");
                 $OUTPUT->footer();
                 die;
             } else {
                 $first = $last + 1;
                 redirect("$CFG->wwwroot/mod/attendance/signinsheets.php?q=$signinsheet->id&amp;" .
-                        "action=upload&amp;tempdir=$tempdir&amp;first=$first&amp;numimports=$numimports&amp;sesskey=".sesskey());
+                        "action=8&amp;tempdir=$tempdir&amp;first=$first&amp;numimports=$numimports&amp;sesskey=".sesskey());
             }
             $importform->display();
-        } else if ($action == 'delete') {
+        } else if ($action == 3) {
             // Some pages need to be deleted.
             $pageids = optional_param_array('pageid', array(), PARAM_INT);
             foreach ($pageids as $pageid) {
@@ -404,6 +404,98 @@ switch($action) {
             $report->error_report($att, $course->id);
             $importform->display();
         }
+        break;
+    case mod_attendance_sessions_page_params::ACTION_REFRESH:
+        // We redirect if no list has been created.
+        if (!signinsheet_partlist_created($att)) {
+            redirect('signinsheets.php?attendance='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
+        }
+        // Only print headers and tabs if not asked to download data.
+        if (!$download) {
+            echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
+            $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
+            $title = get_string('signinsheetparticipantsmanage', 'attendance').' :: ' .format_string($course->fullname);
+            $header = new mod_attendance_header($att, $title);
+            // echo $output->header();
+            echo $output->render($header);
+            echo $output->render($tabs);
+
+            echo $OUTPUT->heading(format_string($signinsheet->name));
+            echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
+        }
+        // Show update button.
+        ?>
+
+        <div class="singlebutton" align="center">
+            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets.php" ?>" method="post">
+                <div>
+                    <input type="hidden" name="att" value="<?php echo $att->id ?>" />
+                    <input type="hidden" name="forcenew" value="1" />
+                    <input type="hidden" name="action" value="10" />
+                    <button type="submit"
+                    onClick='return confirm("<?php echo get_string('signinsheetreallydeleteupdatepdf', 'attendance') ?>")' 
+                    class="btn btn-secondary">
+            <?php echo get_string('signinsheetdeleteupdatepdf', 'attendance') ?>
+                    </button>
+                </div>
+            </form>
+            <br>&nbsp;<br>
+        </div>
+        <?php
+
+        echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
+
+        $sql = "SELECT id, name, number, filename
+                FROM {attendance_ss_p_lists}
+                WHERE attendanceid = :attendanceid
+                ORDER BY name ASC";
+
+        $lists = $DB->get_records_sql($sql, array('attendanceid' => $att->id));
+
+        foreach ($lists as $list) {
+            $fs = get_file_storage();
+
+            // Delete existing pdf if forcenew.
+            if ($forcenew && property_exists($list, 'filename') && $list->filename
+                    && $file = find_pdf_file($context->id, $list->filename)) {
+                $file->delete();
+                $list->filename = null;
+            }
+
+            $pdffile = null;
+            // Create PDF file if necessary.
+            if (!property_exists($list, 'filename') ||  !$list->filename ||
+                    !$pdffile = find_pdf_file($context->id, $list->filename)) {
+                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
+                if ($pdffile) {
+                    $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
+                        $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
+                        '?forcedownload=1';
+                    echo $OUTPUT->action_link($url, trim(format_text(get_string('signinsheetpdfdownload', 'attendance', $pdffile->get_filename()))));
+                } else {
+                    echo $OUTPUT->notification(get_string('signinsheetpdferror', 'attendance', $list->name));
+                }
+                if (!empty($pdffile)) {
+                    $list->filename = $pdffile->get_filename();
+                }
+                $DB->update_record('attendance_ss_p_lists', $list);
+            }
+
+            // Show downloadlink.
+            if ($pdffile) {
+                $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
+                    $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
+                    '?forcedownload=1';
+                echo $OUTPUT->action_link($url, trim(format_text(get_string('signinsheetdownloadpartpdf', 'attendance', $list->name))));
+
+                $list->filename = $pdffile->get_filename();
+                $DB->update_record('offlinequiz_p_lists', $list);
+            } else {
+                echo $OUTPUT->notification(format_text(get_string('signinsheetcreatepartpdferror', 'attendance', $list->name)));
+            }
+            echo '<br />&nbsp;<br />';
+        }
+        echo $OUTPUT->box_end();
         break;
     default:
         // Invalid action specified.

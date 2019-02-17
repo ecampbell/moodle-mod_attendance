@@ -67,6 +67,8 @@ class mod_attendance_sessions_page_params {
     const ACTION_UPLOAD            = 8;
     /** Manage */
     const ACTION_MANAGE            = 9;
+    /** Refresh all PDFs */
+    const ACTION_REFRESH            = 10;
 
     /** @var int view mode of taking attendance page*/
     public $action;
