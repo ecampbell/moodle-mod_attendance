@@ -270,7 +270,7 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
             'filearea' => 'participants',
             'filepath' => '/',
             'itemid' => 0,
-            'filename' => $fileprefix . '_' . $list->id . '_' . $timestamp . '.pdf');
+            'filename' => $fileprefix . '_' . $list->id . '_' . $list->attendanceid . '_' . $list->sessionid . '_' . $timestamp . '.pdf');
 
     if ($oldfile = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
             $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename'])) {

@@ -120,9 +120,16 @@ switch($action) {
         $participants = new attendance_take_data($att);
         $list = new stdClass();
         $list->sessionid = $pageparams->sessionid;
-        $list->attendanceid = $att->id;
+        $list->attendanceid = $id;
         $list->name = date("D d/m/Y", $session->sessdate);
         $list->id = 0; // Need to fix this later.
+        // Get the previous biggest generated file number for this session, and add 1 to it.
+        $sql = "SELECT max(number) as maxlist
+                  FROM {attendance_ss_p_lists}
+                 WHERE attendanceid = :attendanceid AND
+                    sessionid = :sessionid";
+        $last = $DB->get_record_sql($sql, array('attendanceid' => $list->attendanceid, 'sessionid' => $list->sessionid));
+        $list->number = $last->maxlist + 1;
         $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
         if ($pdffile) {
             $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
@@ -132,6 +139,11 @@ switch($action) {
         } else {
             echo $OUTPUT->notification(get_string('signinsheetpdferror', 'attendance', $list->name));
         }
+
+        // Save the PDF file name in the participants list table.
+        $list->filename = $pdffile->get_filename();
+        $DB->insert_record('attendance_ss_p_lists', $list);
+
         echo '<br />&nbsp;<br />';
         echo $OUTPUT->box_end();
         break;
@@ -171,13 +183,14 @@ switch($action) {
         <?php
 
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
+        $participants = new attendance_take_data($att);
 
         $sql = "SELECT id, name, number, filename
                 FROM {attendance_ss_p_lists}
                 WHERE attendanceid = :attendanceid
                 ORDER BY name ASC";
 
-        $lists = $DB->get_records_sql($sql, array('attendanceid' => $att->id));
+        $lists = $DB->get_records_sql($sql, array('attendanceid' => $id));
 
         foreach ($lists as $list) {
             $fs = get_file_storage();
@@ -193,7 +206,7 @@ switch($action) {
             // Create PDF file if necessary.
             if (!property_exists($list, 'filename') ||  !$list->filename ||
                     !$pdffile = find_pdf_file($context->id, $list->filename)) {
-                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $list, $context);
+                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
                 if (!empty($pdffile)) {
                     $list->filename = $pdffile->get_filename();
                 }
@@ -243,7 +256,7 @@ switch($action) {
     case mod_attendance_sessions_page_params::ACTION_UPLOAD:
         // We redirect if no list created.
         if (!signinsheet_partlist_created($att)) {
-            redirect('signinsheets.php?attendance='.$att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
+            redirect('signinsheets.php?id=' . $id . '&attendance=' . $att->id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
 
         $lists = $DB->get_records_sql("
