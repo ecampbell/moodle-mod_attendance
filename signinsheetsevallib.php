@@ -1,5 +1,5 @@
 <?php
-// This file is part of mod_offlinequiz for Moodle - http://moodle.org/
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
             $scannedpage->status = 'error';
             $scannedpage->error = 'nonexistinguser';
         } else {
-            $coursestudents = get_enrolled_users($coursecontext, 'mod/offlinequiz:attempt');
+            $coursestudents = get_enrolled_users($coursecontext, 'mod/attendance:attempt');
             if (empty($coursestudents[$user->id])) {
                 $scannedpage->status = 'error';
                 $scannedpage->error = 'usernotincourse';

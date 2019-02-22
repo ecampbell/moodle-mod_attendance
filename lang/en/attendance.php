@@ -449,6 +449,7 @@ $string['signinsheetcreatelistfirst'] = 'Add participants signin sheets';
 $string['signinsheetdefaultsettings'] = 'Default attendance signin sheet settings';
 $string['signinsheetdefaultsettings_help'] = 'The values you set here are used as default values for the settings of new attendance signin sheets.';
 $string['signinsheetdeleteupdatepdf'] = 'Delete and update PDF forms';
+$string['signinsheetdownloadpartpdf'] = 'Download PDF file for list \'{$a}\'';
 $string['signinsheetfileprefixparticipants'] = 'participants_list';
 $string['signinsheetforthecourse'] = 'Sign-in sheet for the course';
 $string['signinsheetgenerate'] = 'Generate signin sheet';

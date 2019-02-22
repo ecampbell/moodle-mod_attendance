@@ -185,7 +185,7 @@
         <INDEX NAME="attendanceid" UNIQUE="false" FIELDS="attendanceid"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="attendance_ss_participants" COMMENT="Checklist for the participants of an signinsheet">
+    <TABLE NAME="attendance_ss_participants" COMMENT="Checklist for the participants of an attendance activity">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="listid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -202,7 +202,8 @@
     <TABLE NAME="attendance_ss_scanned_pages" COMMENT="Stores information about scanned participants-list-pages.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="signinsheetid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the signinsheet the page belongs to."/>
+        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the attendance module the page belongs to."/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the session the page belongs to."/>
         <FIELD NAME="listnumber" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false" COMMENT="The number of the list"/>
         <FIELD NAME="filename" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="The ID of the image file in the files table."/>
         <FIELD NAME="time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The time the page was scanned."/>

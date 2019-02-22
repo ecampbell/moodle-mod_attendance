@@ -588,7 +588,7 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
     $checkoption = optional_param('checkoption', 0, PARAM_INT);
     $listid = optional_param('listid', '', PARAM_INT);
     $lists = $DB->get_records_sql("
-            SELECT id, number, name
+            SELECT id, number, name, attendanceid, sessionid
               FROM {attendance_ss_p_lists}
              WHERE attendanceid = :attendanceid
           ORDER BY number ASC",
