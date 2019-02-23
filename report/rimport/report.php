@@ -36,7 +36,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
     private function print_error_report($att) {
         global $CFG, $DB, $OUTPUT;
 
-        offlinequiz_load_useridentification();
+        signinsheets_load_useridentification();
         $attendanceconfig = get_config('attendance');
 
         $nologs = optional_param('nologs', 0, PARAM_INT);
@@ -130,9 +130,6 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                     $url = new moodle_url($CFG->wwwroot . '/mod/attendance/image.php?pageid=' . $page->id .
                             '&resultid=' . $page->resultid);
                     $title = get_string('showpage', 'signinsheets_rimport');
-                } else {
-                    $url = new moodle_url($CFG->wwwroot . '/mod/attendance/correct.php?pageid=' . $page->id);
-                    $title = get_string('correcterror', 'signinsheets_rimport');
                 }
 
                 $actionlink = $OUTPUT->action_link($url, $title, new popup_action('click', $url, 'correct' .

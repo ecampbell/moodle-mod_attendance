@@ -1428,7 +1428,7 @@ class signinsheets_page_scanner {
         if (!$this->upperleft) {
             $return = false;
         } else if ($check) {
-            // We check if it is on top only if it is not from correct.php or participants_correct.php.
+            // We check if it is on top only if it is not from signinsheets_return.php.
             $blackpix = 0;
             $halfwidth = round(BOX_INNER_WIDTH * $this->zoomx / 2);
             // We use the black box down left to indicate if we should rotate by 180 deg if it is on top.

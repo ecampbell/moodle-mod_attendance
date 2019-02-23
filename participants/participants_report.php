@@ -112,7 +112,7 @@ class participants_report {
 
         $counter = 1;
         foreach ($pages as $page) {
-            $url = new moodle_url($CFG->wwwroot . '/mod/attendance/participants_correct.php?pageid=' . $page->id);
+            $url = new moodle_url($CFG->wwwroot . '/mod/attendance/signinsheets_return.php?pageid=' . $page->id);
             $title = get_string('signinsheetcorrecterror', 'attendanceid');
 
             $actionlink = $OUTPUT->action_link($url, $title, new popup_action('click', $url, 'correct' . $page->id, $options));
