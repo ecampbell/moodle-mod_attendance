@@ -153,7 +153,7 @@
         <INDEX NAME="notifyid_userid" UNIQUE="false" FIELDS="notifyid, userid"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="attendance_ss_page_corners" COMMENT="Contains the four corners for every page in ss_scanned_pages.">
+    <TABLE NAME="attendance_ss_page_corners" COMMENT="Contains the four corners for every page in attendance_ss_scanned_pages.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="scannedpageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the scanned page the corners belong to."/>
@@ -217,7 +217,7 @@
     <TABLE NAME="attendance_ss_p_choices" COMMENT="The table contains the choices made on scanned lists of participants.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="scannedppageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the corresponding page in ss_scanned_pages."/>
+        <FIELD NAME="scannedppageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the corresponding page in attendance_ss_scanned_pages."/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The ID of the user as recognised from the bar code."/>
         <FIELD NAME="value" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The value of the  choice (1, 0, -1). -1 stands for insecure markings."/>
       </FIELDS>

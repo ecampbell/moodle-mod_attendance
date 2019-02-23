@@ -70,7 +70,7 @@ define('SIGNINSHEET_LATEX_FORMAT', 2);  // LATEX file format for question sheets
 define('NUMBERS_PER_PAGE', 30);        // Number of students on participants list.
 define('OQ_IMAGE_WIDTH', 860);         // Width of correction form.
 
-class signinsheet_question_usage_by_activity extends question_usage_by_activity {
+class signinsheets_question_usage_by_activity extends question_usage_by_activity {
 
     public function get_clone($qinstances) {
         // The new quba doesn't have to be cloned, so we can use the parent class.
@@ -114,7 +114,7 @@ class signinsheet_question_usage_by_activity extends question_usage_by_activity 
             $record = $records->current();
         }
 
-        $quba = new signinsheet_question_usage_by_activity($record->component,
+        $quba = new signinsheets_question_usage_by_activity($record->component,
                 context::instance_by_id($record->contextid));
         $quba->set_id_from_database($record->qubaid);
         $quba->set_preferred_behaviour($record->preferredbehaviour);
@@ -141,15 +141,15 @@ class signinsheet_question_usage_by_activity extends question_usage_by_activity 
  * @param mixed $signinsheet The signinsheet
  * @return array returns an array of offline group numbers
  */
-function signinsheet_get_empty_groups($signinsheet) {
+function signinsheets_get_empty_groups($signinsheet) {
     global $DB;
 
     $emptygroups = array();
 
-    if ($groups = $DB->get_records('signinsheet_groups',
+    if ($groups = $DB->get_records('signinsheets_groups',
                                    array('signinsheetid' => $signinsheet->id), 'number', '*', 0, $signinsheet->numgroups)) {
         foreach ($groups as $group) {
-            $questions = signinsheet_get_group_question_ids($signinsheet, $group->id);
+            $questions = signinsheets_get_group_question_ids($signinsheet, $group->id);
             if (count($questions) < 1) {
                 $emptygroups[] = $group->number;
             }
@@ -163,15 +163,15 @@ function signinsheet_get_empty_groups($signinsheet) {
  * @param unknown_type $scannedpage
  * @param unknown_type $corners
  */
-function signinsheet_save_page_corners($scannedpage, $corners) {
+function signinsheets_save_page_corners($scannedpage, $corners) {
     global $DB;
 
     $position = 0;
-    if ($existingcorners = $DB->get_records('signinsheet_page_corners', array('scannedpageid' => $scannedpage->id), 'position')) {
+    if ($existingcorners = $DB->get_records('signinsheets_page_corners', array('scannedpageid' => $scannedpage->id), 'position')) {
         foreach ($existingcorners as $corner) {
             $corner->x = $corners[$position]->x;
             $corner->y = $corners[$position++]->y;
-            $DB->update_record('signinsheet_page_corners', $corner);
+            $DB->update_record('signinsheets_page_corners', $corner);
         }
 
     } else {
@@ -179,7 +179,7 @@ function signinsheet_save_page_corners($scannedpage, $corners) {
             unset($corner->blank);
             $corner->position = $position++;
             $corner->scannedpageid = $scannedpage->id;
-            $DB->insert_record('signinsheet_page_corners', $corner);
+            $DB->insert_record('signinsheets_page_corners', $corner);
         }
     }
 }
@@ -189,23 +189,23 @@ function signinsheet_save_page_corners($scannedpage, $corners) {
  *
  * @param unknown_type $page
  */
-function signinsheet_delete_scanned_page($page, $context) {
+function signinsheets_delete_scanned_page($page, $context) {
     global $DB;
 
     $resultid = $page->resultid;
     $fs = get_file_storage();
 
     // Delete the scanned page.
-    $DB->delete_records('signinsheet_scanned_pages', array('id' => $page->id));
+    $DB->delete_records('signinsheets_scanned_pages', array('id' => $page->id));
     // Delete the choices made on the page.
-    $DB->delete_records('signinsheet_choices', array('scannedpageid' => $page->id));
+    $DB->delete_records('signinsheets_choices', array('scannedpageid' => $page->id));
     // Delete the corner coordinates.
-    $DB->delete_records('signinsheet_page_corners', array('scannedpageid' => $page->id));
+    $DB->delete_records('signinsheets_page_corners', array('scannedpageid' => $page->id));
 
     // If there is no scannedpage for the result anymore, we also delete the result.
-    if ($resultid && !$DB->get_records('signinsheet_scanned_pages', array('resultid' => $resultid))) {
+    if ($resultid && !$DB->get_records('signinsheets_scanned_pages', array('resultid' => $resultid))) {
         // Delete the result.
-        $DB->delete_records('signinsheet_results', array('id' => $resultid));
+        $DB->delete_records('signinsheets_results', array('id' => $resultid));
     }
 
     // JZ: also delete the image files associated with the deleted page.
@@ -223,15 +223,15 @@ function signinsheet_delete_scanned_page($page, $context) {
  *
  * @param unknown_type $page
  */
-function signinsheet_delete_scanned_p_page($page, $context) {
+function signinsheets_delete_scanned_p_page($page, $context) {
     global $DB;
 
     $fs = get_file_storage();
 
     // Delete the scanned participants page.
-    $DB->delete_records('signinsheet_scanned_p_pages', array('id' => $page->id));
+    $DB->delete_records('signinsheets_scanned_p_pages', array('id' => $page->id));
     // Delete the choices made on the page.
-    $DB->delete_records('signinsheet_p_choices', array('scannedppageid' => $page->id));
+    $DB->delete_records('signinsheets_p_choices', array('scannedppageid' => $page->id));
 
     // JZ: also delete the image files associated with the deleted page.
     if ($page->filename && $file = $fs->get_file($context->id, 'mod_attendance', 'imagefiles', 0, '/', $page->filename)) {
@@ -245,25 +245,25 @@ function signinsheet_delete_scanned_p_page($page, $context) {
  * Delete an signinsheet result, including the questions_usage_by_activity corresponding to it.
  *
  * @param mixed $attempt an integer attempt id or an attempt object
- *      (row of the signinsheet_results table).
+ *      (row of the signinsheets_results table).
  * @param object $signinsheet the signinsheet object.
  */
-function signinsheet_delete_result($resultid, $context) {
+function signinsheets_delete_result($resultid, $context) {
     global $DB;
 
-    if ($result = $DB->get_record('signinsheet_results', array('id' => $resultid))) {
+    if ($result = $DB->get_record('signinsheets_results', array('id' => $resultid))) {
 
         // First delete the result itself.
-        $DB->delete_records('signinsheet_results', array('id' => $result->id));
+        $DB->delete_records('signinsheets_results', array('id' => $result->id));
 
         // Now we delete all scanned pages that refer to the result.
         $scannedpages = $DB->get_records_sql("
                 SELECT *
-                  FROM {signinsheet_scanned_pages}
+                  FROM {signinsheets_scanned_pages}
                  WHERE resultid = :resultid", array('resultid' => $result->id));
 
         foreach ($scannedpages as $page) {
-            signinsheet_delete_scanned_page($page, $context);
+            signinsheets_delete_scanned_page($page, $context);
         }
 
         // Finally, delete the question usage that belongs to the result.
@@ -280,7 +280,7 @@ function signinsheet_delete_result($resultid, $context) {
  *
  * @return multitype:string multitype:string  multitype:multitype:string
  */
-function signinsheet_get_js_module() {
+function signinsheets_get_js_module() {
     global $PAGE;
     return array(
             'name' => 'mod_attendance',
@@ -299,7 +299,7 @@ function signinsheet_get_js_module() {
 /**
  * @deprecated User identification is now set in admin settings.
  */
-function signinsheet_load_useridentification() {
+function signinsheets_load_useridentification() {
     return;
 }
 
@@ -309,7 +309,7 @@ function signinsheet_load_useridentification() {
  * @param string $layout The string representing the signinsheet layout. Always ends in ,0
  * @return int The number of pages in the signinsheet.
  */
-function signinsheet_number_of_pages($layout) {
+function signinsheets_number_of_pages($layout) {
     return substr_count(',' . $layout, ',0');
 }
 
@@ -319,7 +319,7 @@ function signinsheet_number_of_pages($layout) {
  * @param unknown_type $first
  * @param unknown_type $second
  */
-function signinsheet_extend_object (&$first, &$second) {
+function signinsheets_extend_object (&$first, &$second) {
 
     foreach ($second as $key => $value) {
         if (empty($first->$key)) {
@@ -337,13 +337,13 @@ function signinsheet_extend_object (&$first, &$second) {
  * @param unknown_type $groupnumber
  * @return Ambigous <mixed, boolean, unknown>
  */
-function signinsheet_get_group($signinsheet, $groupnumber) {
+function signinsheets_get_group($signinsheet, $groupnumber) {
     global $DB;
 
-    if (!$signinsheetgroup = $DB->get_record('signinsheet_groups',
+    if (!$signinsheetgroup = $DB->get_record('signinsheets_groups',
                                               array('signinsheetid' => $signinsheet->id, 'number' => $groupnumber))) {
         if ($groupnumber > 0 && $groupnumber <= $signinsheet->numgroups) {
-            $signinsheetgroup = signinsheet_add_group( $signinsheet->id, $groupnumber);
+            $signinsheetgroup = signinsheets_add_group( $signinsheet->id, $groupnumber);
         }
     }
     return $signinsheetgroup;
@@ -357,7 +357,7 @@ function signinsheet_get_group($signinsheet, $groupnumber) {
  * @return mixed the id of the new instance on success,
  *          false or a string error message on failure.
  */
-function signinsheet_add_group($signinsheetid, $groupnumber) {
+function signinsheets_add_group($signinsheetid, $groupnumber) {
     GLOBAL $DB;
 
     $signinsheetgroup = new StdClass();
@@ -367,7 +367,7 @@ function signinsheet_add_group($signinsheetid, $groupnumber) {
     // Note: numberofpages and templateusageid will be filled later.
 
     // Try to store it in the database.
-    if (!$signinsheetgroup->id = $DB->insert_record('signinsheet_groups', $signinsheetgroup)) {
+    if (!$signinsheetgroup->id = $DB->insert_record('signinsheets_groups', $signinsheetgroup)) {
         return false;
     }
 
@@ -380,7 +380,7 @@ function signinsheet_add_group($signinsheetid, $groupnumber) {
  * @param object $attendance
  * @return boolean
  */
-function signinsheet_partlist_created($attendance) {
+function signinsheets_partlist_created($attendance) {
     global $DB;
 
     return $DB->count_records('attendance_ss_p_lists', array('attendanceid' => $attendance->id)) > 0;
@@ -394,7 +394,7 @@ function signinsheet_partlist_created($attendance) {
  * @copyright     2015 Academic Moodle Cooperation {@link http://www.academic-moodle-cooperation.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_signinsheet_display_options extends question_display_options {
+class mod_signinsheets_display_options extends question_display_options {
     /**
      * @var boolean if this is false, then the student is not allowed to review
      * anything about the result.
@@ -416,19 +416,19 @@ class mod_signinsheet_display_options extends question_display_options {
      * @param object $signinsheet the signinsheet settings.
      * @param int $one of the {@link DURING}, {@link IMMEDIATELY_AFTER},
      * {@link LATER_WHILE_OPEN} or {@link AFTER_CLOSE} constants.
-     * @return mod_signinsheet_display_options set up appropriately.
+     * @return mod_signinsheets_display_options set up appropriately.
      */
     public static function make_from_signinsheet($signinsheet) {
         $options = new self();
 
-        $options->attempt = self::extract($signinsheet->review, signinsheet_REVIEW_ATTEMPT);
-        $options->marks = self::extract($signinsheet->review, signinsheet_REVIEW_MARKS) ? question_display_options::MARK_AND_MAX : question_display_options::HIDDEN;
-        $options->correctness = self::extract($signinsheet->review, signinsheet_REVIEW_CORRECTNESS);
-        $options->feedback = self::extract($signinsheet->review, signinsheet_REVIEW_SPECIFICFEEDBACK);
-        $options->generalfeedback = self::extract($signinsheet->review, signinsheet_REVIEW_GENERALFEEDBACK);
-        $options->rightanswer = self::extract($signinsheet->review, signinsheet_REVIEW_RIGHTANSWER);
-        $options->sheetfeedback = self::extract($signinsheet->review, signinsheet_REVIEW_SHEET);
-        $options->gradedsheetfeedback = self::extract($signinsheet->review, signinsheet_REVIEW_GRADEDSHEET);
+        $options->attempt = self::extract($signinsheet->review, signinsheets_REVIEW_ATTEMPT);
+        $options->marks = self::extract($signinsheet->review, signinsheets_REVIEW_MARKS) ? question_display_options::MARK_AND_MAX : question_display_options::HIDDEN;
+        $options->correctness = self::extract($signinsheet->review, signinsheets_REVIEW_CORRECTNESS);
+        $options->feedback = self::extract($signinsheet->review, signinsheets_REVIEW_SPECIFICFEEDBACK);
+        $options->generalfeedback = self::extract($signinsheet->review, signinsheets_REVIEW_GENERALFEEDBACK);
+        $options->rightanswer = self::extract($signinsheet->review, signinsheets_REVIEW_RIGHTANSWER);
+        $options->sheetfeedback = self::extract($signinsheet->review, signinsheets_REVIEW_SHEET);
+        $options->gradedsheetfeedback = self::extract($signinsheet->review, signinsheets_REVIEW_GRADEDSHEET);
 
         $options->numpartscorrect = $options->feedback;
 
@@ -453,18 +453,18 @@ class mod_signinsheet_display_options extends question_display_options {
 
 
 /**
- * The appropriate mod_signinsheet_display_options object for this result at this
+ * The appropriate mod_signinsheets_display_options object for this result at this
  * signinsheet right now.
  *
  * @param object $signinsheet the signinsheet instance.
  * @param object $result the result in question.
  * @param $context the signinsheet context.
  *
- * @return mod_signinsheet_display_options
+ * @return mod_signinsheets_display_options
  */
-function signinsheet_get_review_options($signinsheet, $result, $context) {
+function signinsheets_get_review_options($signinsheet, $result, $context) {
 
-    $options = mod_signinsheet_display_options::make_from_signinsheet($signinsheet);
+    $options = mod_signinsheets_display_options::make_from_signinsheet($signinsheet);
 
     $options->readonly = true;
 
@@ -503,7 +503,7 @@ function signinsheet_get_review_options($signinsheet, $result, $context) {
  * Combines the review options from a number of different signinsheet attempts.
  * Returns an array of two ojects, so the suggested way of calling this
  * funciton is:
- * list($someoptions, $alloptions) = signinsheet_get_combined_reviewoptions(...)
+ * list($someoptions, $alloptions) = signinsheets_get_combined_reviewoptions(...)
  *
  * @param object $signinsheet the signinsheet instance.
  * @param array $attempts an array of attempt objects.
@@ -514,7 +514,7 @@ function signinsheet_get_review_options($signinsheet, $result, $context) {
  *          at least one of the attempts, the other showing which options are true
  *          for all attempts.
  */
-function signinsheet_get_combined_reviewoptions($signinsheet) {
+function signinsheets_get_combined_reviewoptions($signinsheet) {
     $fields = array('feedback', 'generalfeedback', 'rightanswer');
     $someoptions = new stdClass();
     $alloptions = new stdClass();
@@ -525,7 +525,7 @@ function signinsheet_get_combined_reviewoptions($signinsheet) {
     $someoptions->marks = question_display_options::HIDDEN;
     $alloptions->marks = question_display_options::MARK_AND_MAX;
 
-    $attemptoptions = mod_signinsheet_display_options::make_from_signinsheet($signinsheet);
+    $attemptoptions = mod_signinsheets_display_options::make_from_signinsheet($signinsheet);
     foreach ($fields as $field) {
         $someoptions->$field = $someoptions->$field || $attemptoptions->$field;
         $alloptions->$field = $alloptions->$field && $attemptoptions->$field;
@@ -542,7 +542,7 @@ function signinsheet_get_combined_reviewoptions($signinsheet) {
  *
  * @param object $attendance
  */
-function signinsheet_delete_pdf_forms($attendance) {
+function signinsheets_delete_pdf_forms($attendance) {
     global $DB;
 
     $fs = get_file_storage();
@@ -558,9 +558,9 @@ function signinsheet_delete_pdf_forms($attendance) {
         }
     }
     // Delete the file names in the signinsheet groups.
-    $DB->set_field('signinsheet_groups', 'questionfilename', null, array('attendanceid' => $attendance->id));
-    $DB->set_field('signinsheet_groups', 'answerfilename', null, array('attendanceid' => $attendance->id));
-    $DB->set_field('signinsheet_groups', 'correctionfilename', null, array('attendanceid' => $attendance->id));
+    $DB->set_field('signinsheets_groups', 'questionfilename', null, array('attendanceid' => $attendance->id));
+    $DB->set_field('signinsheets_groups', 'answerfilename', null, array('attendanceid' => $attendance->id));
+    $DB->set_field('signinsheets_groups', 'correctionfilename', null, array('attendanceid' => $attendance->id));
 
     // Set signinsheet->docscreated to 0.
     $signinsheet->docscreated = 0;
@@ -576,9 +576,9 @@ function signinsheet_delete_pdf_forms($attendance) {
  * @param unknown_type $coursecontext
  * @param unknown_type $systemcontext
  */
-function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontext) {
+function signinsheets_print_partlist($attendance, &$coursecontext, &$systemcontext) {
     global $CFG, $COURSE, $DB, $OUTPUT;
-    signinsheet_load_useridentification();
+    signinsheets_load_useridentification();
     $signinsheetconfig = get_config('attendance');
 
     if (!$course = $DB->get_record('course', array('id' => $coursecontext->instanceid))) {
@@ -649,7 +649,7 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
             'pagesize' => $pagesize,
             'strreallydel' => '');
 
-    $table = new signinsheet_partlist_table('mod-attendance-participants', 'participants.php', $tableparams);
+    $table = new signinsheets_partlist_table('mod-attendance-participants', 'signinsheets.php', $tableparams);
 
     // Define table columns.
     $tablecolumns = array('checkbox', 'picture', 'fullname', $signinsheetconfig->ID_field, 'number', 'attempt', 'checked');
@@ -659,7 +659,7 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
 
     $table->define_columns($tablecolumns);
     $table->define_headers($tableheaders);
-    $table->define_baseurl($CFG->wwwroot.'/mod/attendance/participants.php?mode=attendances&amp;q=' .
+    $table->define_baseurl($CFG->wwwroot.'/mod/attendance/signinsheets.php?mode=attendances&amp;att=' .
             $signinsheet->id . '&amp;checkoption=' . $checkoption . '&amp;pagesize=' . $pagesize. '&amp;listid=' . $listid);
 
     $table->sortable(true);
@@ -711,7 +711,7 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
     $strreallydel  = addslashes(get_string('deletepartcheck', 'attendance'));
 
     $sql = "SELECT COUNT(*)
-              FROM {signinsheet_results}
+              FROM {signinsheets_results}
              WHERE userid = :userid
                AND attendanceid = :attendanceid
                AND status = 'complete'";
@@ -768,8 +768,8 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
     echo '<center>';
 
     if (!empty($participants)) {
-        echo '<form id="downloadoptions" action="participants.php" method="get">';
-        echo '<input type="hidden" name="q" value="' . $signinsheet->id . '" />';
+        echo '<form id="downloadoptions" action="signinsheets.php" method="get">';
+        echo '<input type="hidden" name="att" value="' . $signinsheet->id . '" />';
         echo '<input type="hidden" name="mode" value="attendances" />';
         echo '<input type="hidden" name="pagesize" value="' . $pagesize . '" />';
         echo '<input type="hidden" name="listid" value="' . $listid . '" />';
@@ -793,10 +793,10 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
 
     // Print display options.
     echo '<div class="controls">';
-    echo '<form id="options" action="participants.php" method="get">';
+    echo '<form id="options" action="signinsheets.php" method="get">';
     echo '<center>';
     echo '<p>'.get_string('displayoptions', 'quiz').': </p>';
-    echo '<input type="hidden" name="q" value="' . $signinsheet->id . '" />';
+    echo '<input type="hidden" name="att" value="' . $signinsheet->id . '" />';
     echo '<input type="hidden" name="mode" value="attendances" />';
     echo '<input type="hidden" name="listid" value="'.$listid.'" />';
     echo '<table id="participant-options" class="boxaligncenter">';
@@ -832,10 +832,10 @@ function signinsheet_print_partlist($attendance, &$coursecontext, &$systemcontex
  * @param unknown_type $coursecontext
  * @param unknown_type $systemcontext
  */
-function signinsheet_download_partlist($attendance_ss, $fileformat, &$coursecontext, &$systemcontext) {
+function signinsheets_download_partlist($attendance_ss, $fileformat, &$coursecontext, &$systemcontext) {
     global $CFG, $DB, $COURSE;
 
-    signinsheet_load_useridentification();
+    signinsheets_load_useridentification();
     $signinsheetconfig = get_config('attendance');
 
     $filename = clean_filename(get_string('participants', 'attendance') . $signinsheet->id);
@@ -977,7 +977,7 @@ function signinsheet_download_partlist($attendance_ss, $fileformat, &$coursecont
             $userid = $participant->userid;
             $attempt = false;
             $sql = "SELECT COUNT(*)
-                      FROM {signinsheet_results}
+                      FROM {signinsheets_results}
                      WHERE userid = :userid
                        AND attendanceid = :attendanceid
                        AND status = 'complete'";

@@ -26,6 +26,10 @@ require_once(dirname(__FILE__).'/../../config.php');
 require_once(dirname(__FILE__).'/locallib.php');
 require_once(dirname(__FILE__).'/signinsheetspdflib.php');
 require_once(dirname(__FILE__) . '/signinsheetsevallib.php');
+require_once($CFG->dirroot . '/mod/attendance/participants/participants_listform.php');
+require_once($CFG->dirroot . '/mod/attendance/participants/participants_uploadform.php');
+require_once($CFG->dirroot . '/mod/attendance/participants/participants_report.php');
+require_once($CFG->dirroot . '/mod/attendance/participants/participants_scanner.php');
 
 $pageparams = new mod_attendance_take_page_params();
 
@@ -121,7 +125,7 @@ switch($action) {
         $list = new stdClass();
         $list->sessionid = $pageparams->sessionid;
         $list->attendanceid = $id;
-        $list->name = date("D d/m/Y", $session->sessdate);
+        $list->name = date("D d/m/Y H:i A", $session->sessdate);
         $list->id = 0; // Need to fix this later.
         // Get the previous biggest generated file number for this session, and add 1 to it.
         $sql = "SELECT max(number) as maxlist
@@ -130,7 +134,7 @@ switch($action) {
                     sessionid = :sessionid";
         $last = $DB->get_record_sql($sql, array('attendanceid' => $list->attendanceid, 'sessionid' => $list->sessionid));
         $list->number = $last->maxlist + 1;
-        $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
+        $pdffile = signinsheets_create_pdf_participants($att, $course->id, $participants, $list, $context);
         if ($pdffile) {
             $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
                 $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
@@ -149,7 +153,7 @@ switch($action) {
         break;
     case mod_attendance_sessions_page_params::ACTION_MANAGE:
         // We redirect if no list has been created.
-        // if (!signinsheet_partlist_created($signinsheet)) {
+        // if (!signinsheets_partlist_created($signinsheet)) {
         //     redirect('manage.php?id='.$id, get_string('signinsheetcreatelistfirst', 'attendance'));
         // }
         echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
@@ -206,7 +210,7 @@ switch($action) {
             // Create PDF file if necessary.
             if (!property_exists($list, 'filename') ||  !$list->filename ||
                     !$pdffile = find_pdf_file($context->id, $list->filename)) {
-                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
+                $pdffile = signinsheets_create_pdf_participants($att, $course->id, $participants, $list, $context);
                 if (!empty($pdffile)) {
                     $list->filename = $pdffile->get_filename();
                 }
@@ -240,7 +244,7 @@ switch($action) {
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
 
         // Generate the list of participants as a PDF file
-        $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, null, $context);
+        $pdffile = signinsheets_create_pdf_participants($att, $course->id, $participants, null, $context);
         if ($pdffile) {
             $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
                 $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .
@@ -255,7 +259,7 @@ switch($action) {
 
     case mod_attendance_sessions_page_params::ACTION_UPLOAD:
         // We redirect if no list created.
-        if (!signinsheet_partlist_created($att)) {
+        if (!signinsheets_partlist_created($att)) {
             redirect('manage.php?id=' . $id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
 
@@ -264,7 +268,7 @@ switch($action) {
                 FROM {attendance_ss_p_lists}
                 WHERE attendanceid = :attendanceid
                 ORDER BY name ASC",
-                array('attendanceid' => $att->id));
+                array('attendanceid' => $id));
 
         $fs = get_file_storage();
 
@@ -277,20 +281,20 @@ switch($action) {
         }
 
         if ($redirect) {
-            redirect('signinsheets.php?action=9&amp;q=' . $signinsheet->id, get_string('signinsheetcreatepdffirst', 'attendance'));
+            redirect('manage.php?id=' . $id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
 
         // Print headers and tabs.
-        echo $OUTPUT->heading_with_help(get_string('signinsheetuploadparticipants', 'attendance'), 'signinsheetparticipants', 'attendance');
-        echo $OUTPUT->header();
-        // Print the tabs.
-        echo $output->header();
-        echo $output->render($header);
+        echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
         $tabs = new attendance_tabs($att, attendance_tabs::TAB_MANAGE);
+        $title = get_string('signinsheetparticipantsmanage', 'attendance').' :: ' .format_string($course->fullname);
+        $header = new mod_attendance_header($att, $title);
+        echo $output->render($header);
+        $tabs = new attendance_tabs($att, attendance_tabs::TAB_UPLOAD);
         echo $output->render($tabs);
 
         $report = new participants_report();
-        $importform = new signinsheet_participants_upload_form($thispageurl);
+        $importform = new signinsheets_participants_upload_form($thispageurl);
 
         $first = optional_param('first', 0, PARAM_INT); // Index of the last imported student.
         $numimports = optional_param('numimports', 0, PARAM_INT);
@@ -327,7 +331,7 @@ switch($action) {
                         unlink($importfile);
                         $files = get_directory_list($tempdir);
                     } else {
-                        echo $OUTPUT->notification(get_string('signinsheetcouldnotunzip', 'signinsheet_rimport', $realfilename),
+                        echo $OUTPUT->notification(get_string('couldnotunzip', 'signinsheets_rimport', $realfilename),
                                                    'notifyproblem');
 
                     }
@@ -361,19 +365,19 @@ switch($action) {
                 $file = $files[$j];
                 $filename = $tempdir . '/' . $file;
                 set_time_limit(120);
-                $scanner = new signinsheet_participants_scanner($attendance, $context->id, 0, 0);
+                $scanner = new signinsheets_participants_scanner($attendance, $context->id, 0, 0);
                 if ($scannedpage = $scanner->load_image($filename)) {
                     if ($scannedpage->status == 'ok') {
-                        list($scanner, $scannedpage) = signinsheet_check_scanned_participants_page($att, $scanner, $scannedpage,
+                        list($scanner, $scannedpage) = signinsheets_check_scanned_participants_page($att, $scanner, $scannedpage,
                                                                         $USER->id, $coursecontext, true);
                     }
                     if ($scannedpage->status == 'ok') {
-                        $scannedpage = signinsheet_process_scanned_participants_page($att, $scanner, $scannedpage,
+                        $scannedpage = signinsheets_process_scanned_participants_page($att, $scanner, $scannedpage,
                                                                           $USER->id, $coursecontext);
                     }
                     if ($scannedpage->status == 'ok') {
                         $choicesdata = $DB->get_records('attendance_ss_p_choices', array('scannedppageid' => $scannedpage->id));
-                        $scannedpage = $scannedpage = signinsheet_submit_scanned_participants_page($att, $scannedpage, $choicesdata);
+                        $scannedpage = $scannedpage = signinsheets_submit_scanned_participants_page($att, $scannedpage, $choicesdata);
                         if ($scannedpage->status == 'submitted') {
                             echo get_string('signinsheetpagenumberimported', 'attendance', $j)."<br /><br />";
                         }
@@ -420,7 +424,7 @@ switch($action) {
         break;
     case mod_attendance_sessions_page_params::ACTION_REFRESH:
         // We redirect if no list has been created.
-        if (!signinsheet_partlist_created($att)) {
+        if (!signinsheets_partlist_created($att)) {
             redirect('manage.php?id=' . $id, get_string('signinsheetcreatelistfirst', 'attendance'));
         }
         // Only print headers and tabs if not asked to download data.
@@ -479,7 +483,7 @@ switch($action) {
             // Create PDF file if necessary.
             if (!property_exists($list, 'filename') ||  !$list->filename ||
                     !$pdffile = find_pdf_file($context->id, $list->filename)) {
-                $pdffile = signinsheet_create_pdf_participants($att, $course->id, $participants, $list, $context);
+                $pdffile = signinsheets_create_pdf_participants($att, $course->id, $participants, $list, $context);
                 if ($pdffile) {
                     $url = "$CFG->wwwroot/pluginfile.php/" . $pdffile->get_contextid() . '/' . $pdffile->get_component() . '/' .
                         $pdffile->get_filearea() . '/' . $pdffile->get_itemid() . '/' . $pdffile->get_filename() .

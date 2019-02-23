@@ -14,18 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Version information
- *
- * @package    mod_attendance
- * @copyright  2011 Artem Andreev <andreev.artem@gmail.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace signinsheets_rimport\privacy;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version  = 2019022303;
-$plugin->requires = 2018050800; // Requires 3.5.
-$plugin->release = '3.5.5f';
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->cron     = 0;
-$plugin->component = 'mod_attendance';
+class provider implements
+// This plugin does not store any personal user data.
+\core_privacy\local\metadata\null_provider {
+    /**
+     * This plugin does not store any data
+     *
+     * @return  string
+     */
+    public static function get_reason() : string {
+        return 'privacy:metadata';
+    }
+}

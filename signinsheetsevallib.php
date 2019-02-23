@@ -28,7 +28,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once(dirname(__FILE__) . '/signinsheetslocallib.php');
-require_once($CFG->dirroot . '/mod/offlinequiz/report/rimport/scanner.php');
+require_once($CFG->dirroot . '/mod/attendance/report/rimport/scanner.php');
 require_once($CFG->libdir . '/questionlib.php');
 require_once($CFG->libdir . '/filelib.php');
 
@@ -36,12 +36,12 @@ require_once($CFG->libdir . '/filelib.php');
  * Checks  groupnumber, userkey, and pagenumber of a scanned answer form
  *
  * @param unknown_type $signinsheet
- * @param signinsheet_page_scanner $scanner
+ * @param signinsheets_page_scanner $scanner
  * @param unknown_type $scannedpage
  * @param unknown_type $teacherid
  * @param unknown_type $coursecontext
  */
-function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $scanner, $scannedpage,
+function signinsheets_check_scanned_page($signinsheet, signinsheets_page_scanner $scanner, $scannedpage,
          $teacherid, $coursecontext, $autorotate = false, $recheckresult = false, $ignoremaxanswers = false) {
     global $DB, $CFG;
 
@@ -67,7 +67,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
             $newcorners = array();
 
             // Create a completely new scanner.
-            $scanner = new signinsheet_page_scanner($signinsheet, $scanner->contextid,
+            $scanner = new signinsheets_page_scanner($signinsheet, $scanner->contextid,
                                                     $scanner->maxquestions, $scanner->maxanswers);
 
             $sheetloaded = $scanner->load_stored_image($scannedpage->filename, $newcorners);
@@ -92,25 +92,25 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
 
     $group = null;
     if ($scannedpage->status == 'ok' || $scannedpage->status == 'suspended') {
-        if (!$group = $DB->get_record('signinsheet_groups', array('attendanceid' => $attendance->id,
+        if (!$group = $DB->get_record('signinsheets_groups', array('attendanceid' => $attendance->id,
                                                                   'number' => $scannedpage->groupnumber))) {
             $scannedpage->status = 'error';
             $scannedpage->error = 'grouperror';
         }
     }
 
-    // Adjust the maxanswers of the scanner according to the offlinequiz group determined above.
+    // Adjust the maxanswers of the scanner according to the attendance group determined above.
     if ($group && !$ignoremaxanswers) {
-        $maxanswers = signinsheet_get_maxanswers($signinsheet, array($group));
+        $maxanswers = signinsheets_get_maxanswers($signinsheet, array($group));
         if ( $maxanswers != $scanner->maxanswers ) {
             // Create a completely new scanner.
             $corners = $scanner->get_corners();
-            $scanner = new signinsheet_page_scanner($signinsheet, $scanner->contextid, $scanner->maxquestions, $maxanswers);
+            $scanner = new signinsheets_page_scanner($signinsheet, $scanner->contextid, $scanner->maxquestions, $maxanswers);
 
             $sheetloaded = $scanner->load_stored_image($scannedpage->filename, $corners);
 
             // Recursively call this method this time ignoring the maxanswers change.
-            return signinsheet_check_scanned_page($signinsheet, $scanner, $scannedpage,
+            return signinsheets_check_scanned_page($signinsheet, $scanner, $scannedpage,
                  $teacherid, $coursecontext, $autorotate, $recheckresult, true);
         }
     }
@@ -166,7 +166,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
         $resultexists = false;
         if (!property_exists($scannedpage, 'resultid') || !$scannedpage->resultid || $recheckresult) {
             $sql = "SELECT id
-                      FROM {signinsheet_results}
+                      FROM {signinsheets_results}
                      WHERE attendanceid = :attendanceid
                        AND userid = :userid
                        AND status = 'complete'";
@@ -217,10 +217,10 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
         if ($scannedpage->status == 'ok' || $scannedpage->status == 'suspended' ||
                 ($scannedpage->status == 'error' && $scannedpage->error == 'resultexists') ||
                 ($scannedpage->status == 'error' && $scannedpage->error == 'usernotincourse')) {
-            // We have a group and a userid, so we can check if there is a matching partial result in the signinsheet_results table.
+            // We have a group and a userid, so we can check if there is a matching partial result in the signinsheets_results table.
             // The problem with this is that we could have several partial results with several pages.
             $sql = "SELECT *
-                      FROM {signinsheet_results}
+                      FROM {signinsheets_results}
                      WHERE attendanceid = :attendanceid
                        AND offlinegroupid = :offlinegroupid
                        AND userid = :userid
@@ -231,11 +231,11 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
 
                 // There is no result. First we have to clone the template question usage of the offline group.
                 // We have to use our own loading function in order to get the right class.
-                $templateusage = signinsheet_load_questions_usage_by_activity($group->templateusageid);
+                $templateusage = signinsheets_load_questions_usage_by_activity($group->templateusageid);
 
                 // Get the question instances for initial maxmarks.
                 $sql = "SELECT questionid, maxmark
-                          FROM {signinsheet_group_questions}
+                          FROM {signinsheets_group_questions}
                          WHERE attendanceid = :attendanceid
                            AND offlinegroupid = :offlinegroupid";
 
@@ -250,7 +250,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
                 question_engine::save_questions_usage_by_activity($quba);
 
                 $result = new stdClass();
-                $result->offlinequizid = $signinsheet->id;
+                $result->attendanceid = $signinsheet->id;
                 $result->offlinegroupid = $group->id;
                 $result->userid = $user->id;
                 $result->teacherid = $teacherid;
@@ -260,7 +260,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
                 $result->timecreated = time();
                 $result->timemodified = time();
 
-                $newid = $DB->insert_record('signinsheet_results', $result);
+                $newid = $DB->insert_record('signinsheets_results', $result);
 
                 if ($newid) {
                     $result->id = $newid;
@@ -286,9 +286,9 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
     }
 
     // Now the scanned page definitely has an ID, so we can store the corners.
-    if (!$DB->get_records('signinsheet_page_corners', array('scannedpageid' => $scannedpage->id))) {
+    if (!$DB->get_records('signinsheets_page_corners', array('scannedpageid' => $scannedpage->id))) {
         $corners = $scanner->get_corners();
-        signinsheet_save_page_corners($scannedpage, $corners);
+        signinsheets_save_page_corners($scannedpage, $corners);
     }
 
     if ($autorotate) {
@@ -300,7 +300,7 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
 
 
 /**
- * Stores the choices made on a scanned page in the table signinsheet_choices. If there are no insecure markings
+ * Stores the choices made on a scanned page in the table signinsheets_choices. If there are no insecure markings
  * the page is also submitted, i.e. the answers are processed by the question usage by activiy (quba).
  *
  * @param unknown_type $signinsheet
@@ -309,18 +309,18 @@ function signinsheet_check_scanned_page($signinsheet, signinsheet_page_scanner $
  * @param unknown_type $teacherid
  * @param unknown_type $coursecontext
  */
-function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner $scanner, $scannedpage,
+function signinsheets_process_scanned_page($signinsheet, signinsheets_page_scanner $scanner, $scannedpage,
                                           $teacherid, $questionsperpage, $coursecontext, $submit = false) {
     global $DB;
 
     $signinsheetconfig = get_config('attendance');
 
     if (property_exists($scannedpage, 'resultid') && $scannedpage->resultid) {
-        $group = $DB->get_record('signinsheet_groups',
+        $group = $DB->get_record('signinsheets_groups',
                                  array('attendanceid' => $attendance->id, 'number' => $scannedpage->groupnumber));
         $user = $DB->get_record('user', array($signinsheetconfig->ID_field => $scannedpage->userkey));
-        $result = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid));
-        $quba = signinsheet_load_questions_usage_by_activity($result->usageid);
+        $result = $DB->get_record('signinsheets_results', array('id' => $scannedpage->resultid));
+        $quba = signinsheets_load_questions_usage_by_activity($result->usageid);
         // Retrieve the answers. This initialises the answer hotspots.
         $answers = $scanner->get_answers();
 
@@ -359,7 +359,7 @@ function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner
 
             // Go through all answers of the slot question.
             foreach ($order as $key => $notused) {
-                // Create the data structure for the signinsheet_choices table.
+                // Create the data structure for the signinsheets_choices table.
                 $choice = new stdClass();
                 $choice->scannedpageid = $scannedpage->id;
                 $choice->slotnumber = $slot;
@@ -375,15 +375,15 @@ function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner
                     $insecuremarkings = true;
                 }
                 // We really want to save every single cross  in the database.
-                $choice->id = $DB->insert_record('signinsheet_choices', $choice);
+                $choice->id = $DB->insert_record('signinsheets_choices', $choice);
                 $choicesdata[$slot][$key] = $choice;
             }
         } // End for (slot...
 
         if ((!$insecuremarkings) and $submit) {
-            $scannedpage = signinsheet_submit_scanned_page($signinsheet, $scannedpage, $choicesdata, $startindex, $endindex);
+            $scannedpage = signinsheets_submit_scanned_page($signinsheet, $scannedpage, $choicesdata, $startindex, $endindex);
             if ($scannedpage->status == 'submitted') {
-                signinsheet_check_result_completed($signinsheet, $group, $result);
+                signinsheets_check_result_completed($signinsheet, $group, $result);
             }
         }
 
@@ -410,12 +410,12 @@ function signinsheet_process_scanned_page($signinsheet, signinsheet_page_scanner
  * @param int $startindex
  * @param int $endindex
  */
-function signinsheet_submit_scanned_page($signinsheet, $scannedpage, $choicesdata, $startindex, $endindex) {
+function signinsheets_submit_scanned_page($signinsheet, $scannedpage, $choicesdata, $startindex, $endindex) {
     global $DB;
 
     $signinsheetconfig = get_config('attendance');
 
-    $result = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid));
+    $result = $DB->get_record('signinsheets_results', array('id' => $scannedpage->resultid));
     $quba = question_engine::load_questions_usage_by_activity($result->usageid);
     $slots = $quba->get_slots();
 
@@ -488,13 +488,13 @@ function signinsheet_submit_scanned_page($signinsheet, $scannedpage, $choicesdat
  * @param unknown_type $signinsheetconfig
  * @return object The updated scanned page
  */
-function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scannedpage, $coursecontext,
+function signinsheets_check_for_changed_groupnumber($signinsheet, $scanner, $scannedpage, $coursecontext,
                                                    $questionsperpage, $signinsheetconfig) {
     global $DB, $USER;
 
     if (property_exists($scannedpage, 'resultid') and $scannedpage->resultid) {
-        if ($result = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid))) {
-            if ($oldgroup = $DB->get_record('signinsheet_groups', array('id' => $result->offlinegroupid))) {
+        if ($result = $DB->get_record('signinsheets_results', array('id' => $scannedpage->resultid))) {
+            if ($oldgroup = $DB->get_record('signinsheets_groups', array('id' => $result->offlinegroupid))) {
                 if (intval($oldgroup->number) > 0 && (intval($oldgroup->number) != $scannedpage->groupnumber)) {
                     $oldresultid = $scannedpage->resultid;
                     // We have to disconnect this page and all other pages from this result
@@ -515,17 +515,17 @@ function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scan
                         }
                     }
                     // Delete the old result.
-                    $DB->delete_records('signinsheet_results', array('id' => $oldresultid));
+                    $DB->delete_records('signinsheets_results', array('id' => $oldresultid));
 
                     // Now the old result cannot be found and we can check the page again which will produce a new result.
-                    $scannedpage = signinsheet_check_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id, $coursecontext);
+                    $scannedpage = signinsheets_check_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id, $coursecontext);
                     if ($scannedpage->status == 'error' && $scannedpage->error == 'resultexists') {
                         // Already process the answers but don't submit them.
-                        $scannedpage = signinsheet_process_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id,
+                        $scannedpage = signinsheets_process_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id,
                                                                         $questionsperpage, $coursecontext, false);
 
                         // Compare the old and the new result wrt. the choices.
-                        $scannedpage = signinsheet_check_different_result($scannedpage);
+                        $scannedpage = signinsheets_check_different_result($scannedpage);
                     }
                 }
             }
@@ -536,7 +536,7 @@ function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scan
             if (!$DB->get_record('attendance_ss_scanned_pages', array('resultid' => $oldresultid))) {
 
                 // Delete the result.
-                $DB->delete_records('signinsheet_results', array('id' => $resultid));
+                $DB->delete_records('signinsheets_results', array('id' => $resultid));
             }
         }
     }
@@ -555,14 +555,14 @@ function signinsheet_check_for_changed_groupnumber($signinsheet, $scanner, $scan
  * @param unknown_type $coursecontext
  * @param unknown_type $questionsperpage
  * @param unknown_type $signinsheetconfig
- * @return Ambigous <unknown_type, multitype:unknown_type signinsheet_page_scanner >
+ * @return Ambigous <unknown_type, multitype:unknown_type signinsheets_page_scanner >
  */
-function signinsheet_check_for_changed_user($signinsheet, $scanner, $scannedpage,
+function signinsheets_check_for_changed_user($signinsheet, $scanner, $scannedpage,
                                             $coursecontext, $questionsperpage, $signinsheetconfig) {
     global $DB, $USER;
 
     if (property_exists($scannedpage, 'resultid') and $scannedpage->resultid) {
-        if ($result = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid))) {
+        if ($result = $DB->get_record('signinsheets_results', array('id' => $scannedpage->resultid))) {
             if ($newuser = $DB->get_record('user', array($signinsheetconfig->ID_field => $scannedpage->userkey))) {
                 if ($newuser->id != $result->userid) {
                     $oldresultid = $scannedpage->resultid;
@@ -574,17 +574,17 @@ function signinsheet_check_for_changed_user($signinsheet, $scanner, $scannedpage
 
                     if (!$DB->get_record('attendance_ss_scanned_pages', array('resultid' => $oldresultid))) {
                         // Delete the result if no other pages use this result.
-                        $DB->delete_records('signinsheet_results', array('id' => $oldresultid));
+                        $DB->delete_records('signinsheets_results', array('id' => $oldresultid));
                     }
                     // Now the old result cannot be found and we can check the page again which will produce a new result.
-                    $scannedpage = signinsheet_check_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id, $coursecontext);
+                    $scannedpage = signinsheets_check_scanned_page($signinsheet, $scanner, $scannedpage, $USER->id, $coursecontext);
                     if ($scannedpage->status == 'error' && $scannedpage->error == 'resultexists') {
                         // Already process the answers but don't submit them.
-                        $scannedpage = signinsheet_process_scanned_page($signinsheet, $scanner, $scannedpage,
+                        $scannedpage = signinsheets_process_scanned_page($signinsheet, $scanner, $scannedpage,
                                                                         $USER->id, $questionsperpage, $coursecontext, false);
 
                         // Compare the old and the new result wrt. the choices.
-                        $scannedpage = signinsheet_check_different_result($scannedpage);
+                        $scannedpage = signinsheets_check_different_result($scannedpage);
                     }
                 }
             }
@@ -611,7 +611,7 @@ function signinsheet_check_for_changed_user($signinsheet, $scanner, $scannedpage
  * @param object $result
  * @return boolean
  */
-function signinsheet_check_result_completed($signinsheet, $group, $result) {
+function signinsheets_check_result_completed($signinsheet, $group, $result) {
     global $DB;
 
     $resultpages = $DB->get_records_sql(
@@ -634,10 +634,10 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
         $result->timestart = time();
         $result->timefinish = time();
         $result->timemodified = time();
-        $DB->update_record('signinsheet_results', $result);
+        $DB->update_record('signinsheets_results', $result);
 
         $transaction->allow_commit();
-        signinsheet_update_grades($signinsheet, $result->userid);
+        signinsheets_update_grades($signinsheet, $result->userid);
 
         // Change the error of all submitted pages of the result to '' (was 'missingpages' before).
         foreach ($resultpages as $page) {
@@ -676,13 +676,13 @@ function signinsheet_check_result_completed($signinsheet, $group, $result) {
  * @param object $scannedpage
  * @return object The modified scanned page.
  */
-function signinsheet_check_different_result($scannedpage) {
+function signinsheets_check_different_result($scannedpage) {
     global $DB;
 
-    if ($newchoices = $DB->get_records('signinsheet_choices',
+    if ($newchoices = $DB->get_records('signinsheets_choices',
                                        array('scannedpageid' => $scannedpage->id), ' slotnumber, choicenumber ')) {
 
-        $newresult = $DB->get_record('signinsheet_results', array('id' => $scannedpage->resultid));
+        $newresult = $DB->get_record('signinsheets_results', array('id' => $scannedpage->resultid));
 
         $newchoicesindexed = array();
         foreach ($newchoices as $newchoice) {
@@ -693,19 +693,19 @@ function signinsheet_check_different_result($scannedpage) {
         }
 
         $sql = "SELECT id
-                  FROM {signinsheet_results}
+                  FROM {signinsheets_results}
                  WHERE attendanceid = :attendanceid
                    AND offlinegroupid = :offlinegroupid
                    AND userid = :userid
                    AND status = 'complete'";
-        $params = array('signinsheetid' => $newresult->offlinequizid,
+        $params = array('signinsheetid' => $newresult->attendanceid,
                 'offlinegroupid' => $newresult->offlinegroupid,
                 'userid' => $newresult->userid);
 
         $oldresult = $DB->get_record_sql($sql, $params);
         if ($oldpageid = $DB->get_field('attendance_ss_scanned_pages', 'id',
                                         array('resultid' => $oldresult->id, 'pagenumber' => $scannedpage->pagenumber))) {
-            $oldchoices = $DB->get_records('signinsheet_choices', array('scannedpageid' => $oldpageid), 'slotnumber, choicenumber');
+            $oldchoices = $DB->get_records('signinsheets_choices', array('scannedpageid' => $oldpageid), 'slotnumber, choicenumber');
 
             foreach ($oldchoices as $oldchoice) {
                 if (isset($newchoicesindexed[$oldchoice->slotnumber]) &&
@@ -725,15 +725,15 @@ function signinsheet_check_different_result($scannedpage) {
 
 
 /**
- * Calculate the characteristic numbers for an offlinequiz, i.e. maximum number of questions, maximum number of answers,
+ * Calculate the characteristic numbers for an attendance, i.e. maximum number of questions, maximum number of answers,
  * number of columns on the answer form and the maximum number of questions on each page.
  *
  * @param unknown_type $signinsheet
  * @param unknown_type $groups
  */
-function signinsheet_get_question_numbers($signinsheet, $groups) {
-    $maxquestions = signinsheet_get_maxquestions($signinsheet, $groups);
-    $maxanswers = signinsheet_get_maxanswers($signinsheet, $groups);
+function signinsheets_get_question_numbers($signinsheet, $groups) {
+    $maxquestions = signinsheets_get_maxquestions($signinsheet, $groups);
+    $maxanswers = signinsheets_get_maxanswers($signinsheet, $groups);
 
     // Determine the form type (number of columns).
     $formtype = 4;
@@ -772,12 +772,12 @@ function signinsheet_get_question_numbers($signinsheet, $groups) {
  * Checks  groupnumber, userkey, and pagenumber of a scanned list of participants page
  *
  * @param unknown_type $signinsheet
- * @param signinsheet_page_scanner $scanner
+ * @param signinsheets_page_scanner $scanner
  * @param unknown_type $scannedpage
  * @param unknown_type $teacherid
  * @param unknown_type $coursecontext
  */
-function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_participants_scanner $scanner,
+function signinsheets_check_scanned_participants_page($signinsheet, signinsheets_participants_scanner $scanner,
                                                      $scannedpage, $teacherid, $coursecontext, $autorotate = false) {
     global $DB;
 
@@ -830,7 +830,7 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
             $newcorners[3] = new oq_point(853 - $corners[0]->x, 1208 - $corners[0]->y);
 
             // Create a completely new scanner.
-            $scanner = new signinsheet_participants_scanner($signinsheet, $scanner->contextid, 0, 0);
+            $scanner = new signinsheets_participants_scanner($signinsheet, $scanner->contextid, 0, 0);
 
             $sheetloaded = $scanner->load_stored_image($scannedpage->filename, $newcorners);
             if (!$sheetloaded) {
@@ -882,13 +882,13 @@ function signinsheet_check_scanned_participants_page($signinsheet, signinsheet_p
  * Processes the markings on a scanned list of paritipants page
  *
  * @param unknown_type $signinsheet
- * @param signinsheet_participants_scanner $scanner
+ * @param signinsheets_participants_scanner $scanner
  * @param unknown_type $scannedpage
  * @param unknown_type $teacherid
  * @param unknown_type $coursecontext
  * @return unknown
  */
-function signinsheet_process_scanned_participants_page($signinsheet, signinsheet_participants_scanner $scanner,
+function signinsheets_process_scanned_participants_page($signinsheet, signinsheets_participants_scanner $scanner,
                                                        $scannedpage, $teacherid, $coursecontext) {
     global $DB;
 
@@ -925,11 +925,11 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
             }
             // We really want to save every single choice in the database.
             if ($choice->userid) {
-                if (!$oldchoice = $DB->get_record('signinsheet_p_choices',
+                if (!$oldchoice = $DB->get_record('signinsheets_p_choices',
                                                   array('scannedppageid' => $scannedpage->id, 'userid' => $choice->userid))) {
-                    $choice->id = $DB->insert_record('signinsheet_p_choices', $choice);
+                    $choice->id = $DB->insert_record('signinsheets_p_choices', $choice);
                 } else {
-                    $DB->set_field('signinsheet_p_choices', 'value', $choice->value, array('id' => $oldchoice->id));
+                    $DB->set_field('signinsheets_p_choices', 'value', $choice->value, array('id' => $oldchoice->id));
                 }
             }
         }
@@ -942,7 +942,7 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
         $DB->update_record('attendance_ss_scanned_pages', $scannedpage);
     }
 
-    // Check if all users are in the signinsheet_p_list.
+    // Check if all users are in the signinsheets_p_list.
     if ($scannedpage->status == 'ok') {
 
         $list = $DB->get_record('attendance_ss_p_lists', array('attendanceid' => $attendance->id,
@@ -973,7 +973,7 @@ function signinsheet_process_scanned_participants_page($signinsheet, signinsheet
  * @param unknown_type $choicesdata
  * @return unknown
  */
-function signinsheet_submit_scanned_participants_page($signinsheet, $scannedpage, $choicesdata) {
+function signinsheets_submit_scanned_participants_page($signinsheet, $scannedpage, $choicesdata) {
     global $DB;
 
     if (!$list = $DB->get_record('attendance_ss_p_lists', array('attendanceid' => $attendance->id,

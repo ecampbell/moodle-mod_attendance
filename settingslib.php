@@ -30,7 +30,7 @@ define('SIGNINSHEET_USER_FORMULA_REGEXP', "/^([^\[]*)\[([\-]?[0-9]+)\]([^\=]*)=(
 /**
  *
  */
-class admin_setting_configtext_signinsheet_user_formula extends admin_setting_configtext {
+class admin_setting_configtext_signinsheets_user_formula extends admin_setting_configtext {
     public function validate($data) {
         global $DB, $CFG;
 

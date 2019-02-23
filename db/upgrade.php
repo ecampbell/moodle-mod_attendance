@@ -540,7 +540,7 @@ function xmldb_attendance_upgrade($oldversion=0) {
     if ($oldversion < 2019011500) {
         $table = new xmldb_table('attendance_ss_page_corners');
         if (!$dbman->table_exists($table)) {
-            // Contains the four corners for every page in signinsheet_scanned_pages.
+            // Contains the four corners for every page in signinsheets_scanned_pages.
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10',  XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
             $table->add_field('scannedpageid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the scanned page the corners belong to.
             $table->add_field('x', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, 0, null, null); // The x coordinate of the corner.
@@ -593,7 +593,8 @@ function xmldb_attendance_upgrade($oldversion=0) {
             // Stores information about scanned participants-list-pages.
 
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-            $table->add_field('signinsheetid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the signinsheet the page belongs to.
+            $table->add_field('attendanceid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the signinsheet the page belongs to.
+            $table->add_field('sessionid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the signinsheet the page belongs to.
             $table->add_field('listnumber', XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, null, null, null); // The number of the list.
             $table->add_field('filename', XMLDB_TYPE_CHAR, '1000', null, null, null, null); // The ID of the image file in the files table.
             $table->add_field('time', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0'); // The time the page was scanned.
@@ -610,7 +611,7 @@ function xmldb_attendance_upgrade($oldversion=0) {
             // The table contains the choices made on scanned lists of participants.
 
             $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-            $table->add_field('scannedppageid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the corresponding page in signinsheet_scanned_pages.
+            $table->add_field('scannedppageid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null); // The ID of the corresponding page in signinsheets_scanned_pages.
             $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, null); // The ID of the user as recognised from the bar code.
             $table->add_field('value', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0'); // The value of the  choice (1, 0, -1). -1 stands for insecure markings.
 

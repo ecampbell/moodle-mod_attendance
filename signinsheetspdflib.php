@@ -32,7 +32,7 @@ require_once($CFG->libdir . '/pdflib.php');
 
 define('LOGO_MAX_ASPECT_RATIO',3.714285714);
 
-class signinsheet_pdf extends pdf
+class signinsheets_pdf extends pdf
 {
     /**
      * Containing the current page buffer after checkpoint() was called.
@@ -57,7 +57,7 @@ class signinsheet_pdf extends pdf
 
 }
 
-class signinsheet_participants_pdf extends signinsheet_pdf
+class signinsheets_participants_pdf extends signinsheets_pdf
 {
     public $listno;
 
@@ -166,7 +166,7 @@ class signinsheet_participants_pdf extends signinsheet_pdf
  * @param context $context
  * @return boolean|stored_file
  */
-function signinsheet_create_pdf_participants(mod_attendance_structure $att, int $courseid, attendance_take_data $participants, stdClass $list = null, context $context) {
+function signinsheets_create_pdf_participants(mod_attendance_structure $att, int $courseid, attendance_take_data $participants, stdClass $list = null, context $context) {
     global $CFG, $DB;
 
     $coursecontext = context_course::instance($courseid); // Course context.
@@ -178,7 +178,7 @@ function signinsheet_create_pdf_participants(mod_attendance_structure $att, int 
         return false;
     }
 
-    $pdf = new signinsheet_participants_pdf('P', 'mm', 'A4');
+    $pdf = new signinsheets_participants_pdf('P', 'mm', 'A4');
     $pdf->listno = $list->number;
     $title = $att->course->fullname . ', ' . $att->name;
     // Add the list name to the title.

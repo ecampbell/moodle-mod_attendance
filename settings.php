@@ -180,7 +180,7 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading('defaultsigninsheetsettings', $name, $description));
 
     // User identification.
-    $settings->add(new admin_setting_configtext_signinsheet_user_formula('attendance/signinsheetuseridentification',
+    $settings->add(new admin_setting_configtext_signinsheets_user_formula('attendance/signinsheetuseridentification',
             get_string('signinsheetuseridentification', 'attendance'), get_string('signinsheetconfiguseridentification', 'attendance'),
             '[7]=idnumber' , PARAM_RAW, 30));
 

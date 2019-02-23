@@ -466,7 +466,7 @@ class attendance_take_data implements renderable {
  * @copyright  2011 Artem Andreev <andreev.artem@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class attendance_signinsheet_data implements renderable {
+class attendance_signinsheets_data implements renderable {
     /** @var array  */
     public $users;
     /** @var array|null|stdClass  */
@@ -493,7 +493,7 @@ class attendance_signinsheet_data implements renderable {
     public $att;
 
     /**
-     * attendance_signinsheet_data constructor.
+     * attendance_signinsheets_data constructor.
      * @param mod_attendance_structure $att
      */
     public function  __construct(mod_attendance_structure $att) {
