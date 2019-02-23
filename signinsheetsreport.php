@@ -82,7 +82,7 @@ if ($node) {
     $node->make_active();
 }
 
-$reportlist = offlinequiz_report_list($context);
+$reportlist = signinsheets_report_list($context);
 
 if (empty($reportlist)) {
     print_error('signinsheeterroraccessingreport', 'attendance');
@@ -100,7 +100,7 @@ if (!is_readable("report/$mode/report.php")) {
     print_error('signinsheetreportnotfound', 'attendance', '', $mode);
 }
 
-// Open the selected offlinequiz report and display it.
+// Open the selected signinsheets report and display it.
 $file = $CFG->dirroot . '/mod/attendance/report/' . $mode . '/report.php';
 if (is_readable($file)) {
     include_once($file);

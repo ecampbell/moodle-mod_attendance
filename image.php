@@ -18,7 +18,7 @@
  * Page for viewing scanned answer forms to students
  *
  * @package       mod
- * @subpackage    offlinequiz
+ * @subpackage    attendance
  * @author        Juergen Zimmer <zimmerj7@univie.ac.at>
  * @copyright     2015 Academic Moodle Cooperation {@link http://www.academic-moodle-cooperation.org}
  * @since         Moodle 2.2
@@ -26,49 +26,49 @@
  */
 
 require_once(dirname(__FILE__) . '/../../config.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetsreport/default.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetsreport/rimport/scanner.php');
+require_once($CFG->dirroot . '/mod/attendance/report/default.php');
+require_once($CFG->dirroot . '/mod/attendance/report/rimport/scanner.php');
 require_once($CFG->dirroot . '/mod/attendance/signinsheetslocallib.php');
 require_once($CFG->dirroot . '/mod/attendance/signinsheetsevallib.php');
 
 $resultid = required_param('resultid', PARAM_INT);
 $pageid      = optional_param('pageid', 0, PARAM_INT);
 
-if (!$result = $DB->get_record('offlinequiz_results', array('id' => $resultid))) {
+if (!$result = $DB->get_record('attendance_results', array('id' => $resultid))) {
     print_error('noresult', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
 }
-if (!$scannedpage = $DB->get_record('offlinequiz_scanned_pages', array('id' => $pageid))) {
+if (!$scannedpage = $DB->get_record('attendance_scanned_pages', array('id' => $pageid))) {
     print_error('nopage', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
 }
-if (!$offlinequiz = $DB->get_record("offlinequiz", array('id' => $result->offlinequizid))) {
-    print_error('noofflinequiz', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+if (!$offlinequiz = $DB->get_record("attendance", array('id' => $result->attendanceid))) {
+    print_error('noattendance', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
-if (!$course = $DB->get_record("course", array('id' => $offlinequiz->course))) {
-    print_error('nocourse', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+if (!$course = $DB->get_record("course", array('id' => $attendance->course))) {
+    print_error('nocourse', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
-if (!$cm = get_coursemodule_from_instance("offlinequiz", $offlinequiz->id, $course->id)) {
-    print_error('nocm', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+if (!$cm = get_coursemodule_from_instance("attendance", $attendance->id, $course->id)) {
+    print_error('nocm', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
-if (!$groups = $DB->get_records('offlinequiz_groups', array('offlinequizid' => $offlinequiz->id), 'number', '*', 0,
-        $offlinequiz->numgroups)) {
-    print_error('nogroups', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+if (!$groups = $DB->get_records('attendance_groups', array('attendanceid' => $attendance->id), 'number', '*', 0,
+        $attendance->numgroups)) {
+    print_error('nogroups', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
 
 require_login($course->id, false, $cm);
 $context = context_module::instance($cm->id);
 
 if (!has_capability('mod/attendance:viewreports', $context) and !has_capability('mod/attendance:attempt', $context)) {
-    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
 
 if (!has_capability('mod/attendance:viewreports', $context) and $result->userid != $USER->id) {
-    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
 
-$options = offlinequiz_get_review_options($offlinequiz, $result, $context);
+$options = signinsheets_get_review_options($attendance, $result, $context);
 
 if (!$options->sheetfeedback and !$options->gradedsheetfeedback) {
-    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+    print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
 
 $url = new moodle_url('/mod/attendance/image.php', array('pageid' => $scannedpage->id, 'resultid' => $result->id));
@@ -81,24 +81,24 @@ echo ".imagebutton {width:250px; height:24px; text-align:left; margin-bottom:10p
 echo "</style>\n";
 echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head>';
 
-offlinequiz_load_useridentification();
-$offlinequizconfig = get_config('offlinequiz');
+attendance_load_useridentification();
+$attendanceconfig = get_config('attendance');
 $group = $groups[$result->offlinegroupid];
-$offlinequiz->groupid = - $group->id;
+$attendance->groupid = - $group->id;
 
-list($maxquestions, $maxanswers, $formtype, $questionsperpage) = offlinequiz_get_question_numbers($offlinequiz, array($group));
+list($maxquestions, $maxanswers, $formtype, $questionsperpage) = offlinequiz_get_question_numbers($attendance, array($group));
 
-$offlinequizconfig->papergray = $offlinequiz->papergray;
+$attendanceconfig->papergray = $attendance->papergray;
 
 // Load corners from DB.
-$dbcorners = $DB->get_records('offlinequiz_page_corners', array('scannedpageid' => $scannedpage->id));
+$dbcorners = $DB->get_records('attendance_ss_page_corners', array('scannedpageid' => $scannedpage->id));
 $corners = array();
 foreach ($dbcorners as $corner) {
     $corners[] = new oq_point($corner->x, $corner->y);
 }
 
 // Initialize a page scanner.
-$scanner = new offlinequiz_page_scanner($offlinequiz, $context->id, $maxquestions, $maxanswers);
+$scanner = new offlinequiz_page_scanner($attendance, $context->id, $maxquestions, $maxanswers);
 
 // Load the stored picture file.
 $sheetloaded = $scanner->load_stored_image($scannedpage->filename, $corners);

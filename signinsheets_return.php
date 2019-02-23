@@ -41,12 +41,12 @@ if (!$scannedpage = $DB->get_record('attendance_ss_scanned_pages', array('id' =>
     print_error('noscannedpage', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $attendance->course, $pageid);
 }
 
-if (!$attendance = $DB->get_record('attendance', array('id' => $scannedpage->offlinequizid))) {
+if (!$attendance = $DB->get_record('attendance', array('id' => $scannedpage->attendanceid))) {
     print_error('noattendance', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $attendance->course,
                 $scannedpage->attendanceid);
 }
 
-if (!$course = $DB->get_record('course', array('id' => $offlinequiz->course))) {
+if (!$course = $DB->get_record('course', array('id' => $attendance->course))) {
     print_error('nocourse', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $attendance->course,
                 array('course' => $attendance->course,
                       'attendance' => $attendance->id));

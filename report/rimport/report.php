@@ -59,7 +59,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $table->initialbars(true);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
-        $table->define_baseurl($CFG->wwwroot . '/mod/attendance/report.php?mode=rimport&amp;att=' .
+        $table->define_baseurl($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?mode=rimport&amp;att=' .
                 $att->id . '&amp;nologs=' . $nologs .
                 '&amp;pagesize=' . $pagesize);
 
@@ -125,20 +125,11 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
             if ($page->error == 'filenotfound') {
                 $actionlink = '';
-            } else {
-                if ($page->error == 'missingpages') {
-                    $url = new moodle_url($CFG->wwwroot . '/mod/attendance/image.php?pageid=' . $page->id .
-                            '&resultid=' . $page->resultid);
-                    $title = get_string('showpage', 'signinsheets_rimport');
-                }
-
-                $actionlink = $OUTPUT->action_link($url, $title, new popup_action('click', $url, 'correct' .
-                        $page->id, $options));
             }
 
             $groupstr = '?';
             $groupnumber = $page->groupnumber;
-            if ($groupnumber > 0 and $groupnumber <= $offlinequiz->numgroups) {
+            if ($groupnumber > 0 and $groupnumber <= $attendance->numgroups) {
                 $groupstr = $letterstr[$page->groupnumber - 1];
             }
 
@@ -173,7 +164,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
     /**
      * (non-PHPdoc)
-     * @see offlinequiz_default_report::display()
+     * @see signinsheets_default_report::display()
      */
     public function display($att, $cm, $course) {
         global $CFG, $COURSE, $DB, $OUTPUT, $USER;
@@ -184,12 +175,12 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $pageoptions['id'] = $cm->id;
         $pageoptions['mode'] = 'rimport';
 
-        $reporturl = new moodle_url('/mod/attendance/report.php', $pageoptions);
+        $reporturl = new moodle_url('/mod/attendance/signinsheetsreport.php', $pageoptions);
 
         $action = optional_param('action', '', PARAM_ACTION);
         if ($action != 'delete') {
             $this->print_header_and_tabs($cm, $course, $att, 'rimport');
-            if (!$offlinequiz->docscreated) {
+            if (!$att->docscreated) {
                 echo $OUTPUT->heading(format_string($att->name));
                 echo $OUTPUT->heading(get_string('nopdfscreated', 'attendance'));
                 return true;
@@ -267,13 +258,13 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
             // Create a new queue job.
             $job = new stdClass();
-            $job->offlinequizid = $offlinequiz->id;
+            $job->attendanceid = $att->id;
             $job->importuserid = $USER->id;
             $job->timecreated = time();
             $job->timestart = 0;
             $job->timefinish = 0;
             $job->status = 'new';
-            if (!$job->id = $DB->insert_record('offlinequiz_queue', $job)) {
+            if (!$job->id = $DB->insert_record('attendance_ss_queue', $job)) {
                 echo $OUTPUT->notification(get_string('couldnotcreatejob', 'signinsheets_rimport'), 'notifyproblem');
             }
 
@@ -292,7 +283,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
             // Notify the user.
             echo $OUTPUT->notification(get_string('addingfilestoqueue', 'signinsheets_rimport', $added), 'notifysuccess');
-            echo $OUTPUT->continue_button($CFG->wwwroot . '/mod/attendance/report.php?q=' . $offlinequiz->id . '&mode=rimport');
+            echo $OUTPUT->continue_button($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?q=' . $offlinequiz->id . '&mode=rimport');
         } else {
 
             // Print info about offlinequiz_queue jobs.
@@ -337,7 +328,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                             }
                         }
 
-                        redirect($CFG->wwwroot . '/mod/attendance/report.php?q=' . $offlinequiz->id . '&amp;mode=rimport');
+                        redirect($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?q=' . $offlinequiz->id . '&amp;mode=rimport');
                     } else {
                         print_error('invalidsesskey');
                     }
