@@ -28,7 +28,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/mod/attendance/report/rimport/upload_form.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/rimport/upload_form.php');
 require_once($CFG->libdir . '/filelib.php');
 
 class signinsheets_rimport_report extends signinsheets_default_report {
@@ -49,7 +49,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $tableparams = array('att' => $att->id, 'mode' => 'rimport', 'action' => 'delete',
                 'strreallydel'  => addslashes(get_string('deletepagecheck', 'attendance')));
 
-        $table = new signinsheets_selectall_table('mod_attendance_import_report', 'report.php', $tableparams);
+        $table = new signinsheets_selectall_table('mod_attendance_import_report', 'signinsheets/report.php', $tableparams);
 
         $tablecolumns = array('checkbox', 'counter', 'userkey', 'groupnumber', 'pagenumber', 'time', 'error', 'info', 'link');
         $tableheaders = array('', '#', get_string($attendanceconfig->ID_field, 'signinsheets_rimport'),
@@ -59,7 +59,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $table->initialbars(true);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
-        $table->define_baseurl($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?mode=rimport&amp;att=' .
+        $table->define_baseurl($CFG->wwwroot . '/mod/attendance/signinsheets/report.php?mode=rimport&amp;att=' .
                 $att->id . '&amp;nologs=' . $nologs .
                 '&amp;pagesize=' . $pagesize);
 
@@ -175,7 +175,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $pageoptions['id'] = $cm->id;
         $pageoptions['mode'] = 'rimport';
 
-        $reporturl = new moodle_url('/mod/attendance/signinsheetsreport.php', $pageoptions);
+        $reporturl = new moodle_url('/mod/attendance/signinsheets/report.php', $pageoptions);
 
         $action = optional_param('action', '', PARAM_ACTION);
         if ($action != 'delete') {
@@ -275,7 +275,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                 $jobfile->queueid = $job->id;
                 $jobfile->filename = $dirname . '/' . $file;
                 $jobfile->status = 'new';
-                if (!$jobfile->id = $DB->insert_record('offlinequiz_queue_data', $jobfile)) {
+                if (!$jobfile->id = $DB->insert_record('attendance_ss_queue_data', $jobfile)) {
                     echo $OUTPUT->notification(get_string('couldnotcreatejobfile', 'signinsheets_rimport'), 'notifyproblem');
                     $added--;
                 }
@@ -283,20 +283,20 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
             // Notify the user.
             echo $OUTPUT->notification(get_string('addingfilestoqueue', 'signinsheets_rimport', $added), 'notifysuccess');
-            echo $OUTPUT->continue_button($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?q=' . $offlinequiz->id . '&mode=rimport');
+            echo $OUTPUT->continue_button($CFG->wwwroot . '/mod/attendance/signinsheets/report.php?q=' . $offlinequiz->id . '&mode=rimport');
         } else {
 
-            // Print info about offlinequiz_queue jobs.
+            // Print info about attendance_ss_queue jobs.
             $sql = 'SELECT COUNT(*) as count
-                      FROM {offlinequiz_queue} q
-                      JOIN {offlinequiz_queue_data} qd on q.id = qd.queueid
+                      FROM {attendance_ss_queue} q
+                      JOIN {attendance_ss_queue_data} qd on q.id = qd.queueid
                      WHERE (qd.status = :status1 OR qd.status = :status3)
-                       AND q.offlinequizid = :offlinequizid
+                       AND q.sessionid = :sessionid
                        AND q.status = :status2
                     ';
-            $newforms = $DB->get_record_sql($sql, array('offlinequizid' => $offlinequiz->id, 'status1' => 'new',
+            $newforms = $DB->get_record_sql($sql, array('sessionid' => $offlinequiz->id, 'status1' => 'new',
                     'status2' => 'new', 'status3' => ''));
-            $processingforms = $DB->get_record_sql($sql, array('offlinequizid' => $offlinequiz->id, 'status1' => 'processing',
+            $processingforms = $DB->get_record_sql($sql, array('sessionid' => $offlinequiz->id, 'status1' => 'processing',
                     'status2' => 'processing', 'status3' => 'new'));
 
             if ($newforms->count > 0) {
@@ -328,14 +328,14 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                             }
                         }
 
-                        redirect($CFG->wwwroot . '/mod/attendance/signinsheetsreport.php?q=' . $offlinequiz->id . '&amp;mode=rimport');
+                        redirect($CFG->wwwroot . '/mod/attendance/signinsheets/report.php?id=' . $att->id . '&amp;mode=rimport');
                     } else {
                         print_error('invalidsesskey');
                     }
                     break;
                 default:
                     // Print the table with answer forms that need correction.
-                    $this->print_error_report($offlinequiz);
+                    $this->print_error_report($att);
                     // Display the upload form.
                     $importform->display();
             }

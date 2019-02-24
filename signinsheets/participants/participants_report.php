@@ -27,7 +27,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/tablelib.php');
-require_once($CFG->dirroot . '/mod/attendance/report/rimport/errorpages_table.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/rimport/errorpages_table.php');
 
 class participants_report {
     /**
@@ -57,7 +57,7 @@ class participants_report {
 
         $tableparams = array('q' => $att->id, 'mode' => 'upload', 'pagesize' => $pagesize, 'action' => 'delete',
                 'strreallydel' => addslashes(get_string('signinsheetdeletepagecheck', 'attendance')));
-        $table = new signinsheets_selectall_table('mod-attendanceid-participants-error', 'signinsheets.php', $tableparams);
+        $table = new signinsheets_selectall_table('mod-attendanceid-participants-error', 'signinsheets/participants.php', $tableparams);
 
         // Add extra limits due to initials bar.
         list($ttest, $tparams) = $table->get_sql_where();
@@ -82,7 +82,7 @@ class participants_report {
 
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
-        $baseurl = new moodle_url('/mod/attendance/signinsheets.php', array('attendance' => $att->id, 'mode' => 'upload'));
+        $baseurl = new moodle_url('/mod/attendance/signinsheets/participants.php', array('attendance' => $att->id, 'mode' => 'upload'));
         $table->define_baseurl($baseurl);
 
         $table->sortable(true);
@@ -112,7 +112,7 @@ class participants_report {
 
         $counter = 1;
         foreach ($pages as $page) {
-            $url = new moodle_url($CFG->wwwroot . '/mod/attendance/signinsheets_return.php?pageid=' . $page->id);
+            $url = new moodle_url($CFG->wwwroot . '/mod/attendance/signinsheets/participants_correct.php?pageid=' . $page->id);
             $title = get_string('signinsheetcorrecterror', 'attendanceid');
 
             $actionlink = $OUTPUT->action_link($url, $title, new popup_action('click', $url, 'correct' . $page->id, $options));

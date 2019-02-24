@@ -649,7 +649,7 @@ function signinsheets_print_partlist($attendance, &$coursecontext, &$systemconte
             'pagesize' => $pagesize,
             'strreallydel' => '');
 
-    $table = new signinsheets_partlist_table('mod-attendance-participants', 'signinsheets.php', $tableparams);
+    $table = new signinsheets_partlist_table('mod-attendance-participants', 'signinsheets/participants.php', $tableparams);
 
     // Define table columns.
     $tablecolumns = array('checkbox', 'picture', 'fullname', $signinsheetconfig->ID_field, 'number', 'attempt', 'checked');
@@ -659,7 +659,7 @@ function signinsheets_print_partlist($attendance, &$coursecontext, &$systemconte
 
     $table->define_columns($tablecolumns);
     $table->define_headers($tableheaders);
-    $table->define_baseurl($CFG->wwwroot.'/mod/attendance/signinsheets.php?mode=attendances&amp;att=' .
+    $table->define_baseurl($CFG->wwwroot.'/mod/attendance/signinsheets/participants.php?mode=attendances&amp;att=' .
             $signinsheet->id . '&amp;checkoption=' . $checkoption . '&amp;pagesize=' . $pagesize. '&amp;listid=' . $listid);
 
     $table->sortable(true);
@@ -768,7 +768,7 @@ function signinsheets_print_partlist($attendance, &$coursecontext, &$systemconte
     echo '<center>';
 
     if (!empty($participants)) {
-        echo '<form id="downloadoptions" action="signinsheets.php" method="get">';
+        echo '<form id="downloadoptions" action="signinsheets/participants.php" method="get">';
         echo '<input type="hidden" name="att" value="' . $signinsheet->id . '" />';
         echo '<input type="hidden" name="mode" value="attendances" />';
         echo '<input type="hidden" name="pagesize" value="' . $pagesize . '" />';
@@ -793,7 +793,7 @@ function signinsheets_print_partlist($attendance, &$coursecontext, &$systemconte
 
     // Print display options.
     echo '<div class="controls">';
-    echo '<form id="options" action="signinsheets.php" method="get">';
+    echo '<form id="options" action="signinsheets/participants.php" method="get">';
     echo '<center>';
     echo '<p>'.get_string('displayoptions', 'quiz').': </p>';
     echo '<input type="hidden" name="att" value="' . $signinsheet->id . '" />';

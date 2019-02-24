@@ -443,7 +443,7 @@ class mod_attendance_structure {
      */
     public function url_signinsheets($params=array()) {
         $params = array_merge(array('id' => $this->cm->id), $params);
-        return new moodle_url('/mod/attendance/signinsheets.php', $params);
+        return new moodle_url('/mod/attendance/signinsheets/participants.php', $params);
     }
 
     /**

@@ -1143,15 +1143,13 @@ class mod_attendance_renderer extends plugin_renderer_base {
                 $url = new moodle_url('/mod/attendance/take.php', $params);
                 $icon = $OUTPUT->pix_icon('redo', get_string('changeattendance', 'attendance'), 'attendance');
                 $row->cells[] = html_writer::link($url, $icon);
-            }
 
-            if (has_capability('mod/attendance:signinsheets', $context)) {
                 $params = array('id' => $userdata->filtercontrols->cm->id,
                     'sessionid' => $sess->id,
                     'grouptype' => $sess->groupid,
                     'action' => mod_attendance_preferences_page_params::ACTION_DOWNLOAD,
                     'mode' => 'createpdfs');
-                $url = new moodle_url('/mod/attendance/signinsheets.php', $params);
+                $url = new moodle_url('/mod/attendance/signinsheets/participants.php', $params);
                 $icon = $OUTPUT->pix_icon('print', get_string('signinsheetgenerate', 'attendance'));
                 $row->cells[] = html_writer::link($url, $icon);
             }

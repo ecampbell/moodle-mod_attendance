@@ -22,14 +22,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__).'/../../config.php');
+require_once(dirname(__FILE__).'/../../../config.php');
 require_once(dirname(__FILE__).'/locallib.php');
-require_once(dirname(__FILE__).'/signinsheetspdflib.php');
-require_once(dirname(__FILE__) . '/signinsheetsevallib.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_listform.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_uploadform.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_report.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_scanner.php');
+require_once(dirname(__FILE__).'/pdflib.php');
+require_once(dirname(__FILE__) . '/evallib.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_listform.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_uploadform.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_report.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_scanner.php');
 
 $pageparams = new mod_attendance_take_page_params();
 
@@ -170,7 +170,7 @@ switch($action) {
         ?>
 
         <div class="singlebutton" align="center">
-            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets.php" ?>" method="post">
+            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets/participants.php" ?>" method="post">
                 <div>
                     <input type="hidden" name="att" value="<?php echo $att->id ?>" />
                     <input type="hidden" name="forcenew" value="1" />
@@ -397,12 +397,12 @@ switch($action) {
                     $OUTPUT->notification(get_string('signinsheetnopages', 'attendance'));
                 }
                 remove_dir($tempdir);
-                echo $OUTPUT->continue_button("$CFG->wwwroot/mod/attendance/signinsheets.php?q=$signinsheet->id&amp;action=8");
+                echo $OUTPUT->continue_button("$CFG->wwwroot/mod/attendance/signinsheets/participants.php?q=$signinsheet->id&amp;action=8");
                 $OUTPUT->footer();
                 die;
             } else {
                 $first = $last + 1;
-                redirect("$CFG->wwwroot/mod/attendance/signinsheets.php?q=$signinsheet->id&amp;" .
+                redirect("$CFG->wwwroot/mod/attendance/signinsheets/participants.php?q=$signinsheet->id&amp;" .
                         "action=8&amp;tempdir=$tempdir&amp;first=$first&amp;numimports=$numimports&amp;sesskey=".sesskey());
             }
             $importform->display();
@@ -444,7 +444,7 @@ switch($action) {
         ?>
 
         <div class="singlebutton" align="center">
-            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets.php" ?>" method="post">
+            <form action="<?php echo "$CFG->wwwroot/mod/attendance/signinsheets/participants.php" ?>" method="post">
                 <div>
                     <input type="hidden" name="att" value="<?php echo $att->id ?>" />
                     <input type="hidden" name="forcenew" value="1" />

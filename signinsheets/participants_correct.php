@@ -24,11 +24,11 @@
  * @license       http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__) . '/../../config.php');
-require_once($CFG->dirroot . '/mod/attendance/report/default.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetsevallib.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_scanner.php');
-require_once($CFG->dirroot . '/mod/attendance/participants/participants_report.php');
+require_once(dirname(__FILE__) . '/../../../config.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/default.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/evallib.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_scanner.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/participants/participants_report.php');
 require_once($CFG->dirroot . '/mod/attendance/locallib.php');
 
 $pageid     = optional_param('pageid', 0, PARAM_INT);
@@ -66,7 +66,7 @@ $context = context_module::instance($cm->id);
 $coursecontext = context_course::instance($course->id);
 require_capability('mod/attendance:viewreports', $context);
 
-$url = new moodle_url('/mod/attendance/signinsheets_return.php', array('pageid' => $scannedpage->id));
+$url = new moodle_url('/mod/attendance/signinsheets/participants_correct.php', array('pageid' => $scannedpage->id));
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('report');
 
@@ -338,7 +338,7 @@ $scannedpage = signinsheets_check_scanned_participants_page($offlinequiz, $scann
 
 $listnumber = $scannedpage->listnumber;
 if ($listnumber > 0) {
-    $list = $DB->get_record('attendance_ss_p_lists', array('offlinequizid' => $offlinequiz->id, 'number' => $listnumber));
+    $list = $DB->get_record('attendance_ss_p_lists', array('sessionid' => $offlinequiz->id, 'number' => $listnumber));
 }
 
 $participants = $scanner->get_participants();
@@ -657,10 +657,10 @@ if ($sheetloaded) {
                  WHERE p.userid = u.id
                    AND p.listid = :listid
                    AND p.listid = pl.id
-                   AND pl.offlinequizid = :offlinequizid
+                   AND pl.sessionid = :sessionid
               ORDER BY u.lastname, u.firstname";
 
-        $params['offlinequizid'] = $offlinequiz->id;
+        $params['sessionid'] = $offlinequiz->id;
         $params['listid'] = $list->id;
 
         $users = $DB->get_records_sql($sql, $params);

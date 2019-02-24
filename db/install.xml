@@ -171,8 +171,8 @@
     <TABLE NAME="attendance_ss_p_lists" COMMENT="Lists for participants">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="number" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The number of the list."/>
         <FIELD NAME="filename" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="The id of the PDF file in the files table."/>
@@ -202,8 +202,8 @@
     <TABLE NAME="attendance_ss_scanned_pages" COMMENT="Stores information about scanned participants-list-pages.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the attendance module the page belongs to."/>
         <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the session the page belongs to."/>
+        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the attendance module the page belongs to."/>
         <FIELD NAME="listnumber" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false" COMMENT="The number of the list"/>
         <FIELD NAME="filename" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="The ID of the image file in the files table."/>
         <FIELD NAME="time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The time the page was scanned."/>
@@ -224,6 +224,51 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
+    </TABLE>
+    <TABLE NAME="attendance_ss_queue" COMMENT="list of cron jobs">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The ID of the offlinequiz the job belongs to."/>
+        <FIELD NAME="attendanceid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The ID of the offlinequiz the job belongs to."/>
+        <FIELD NAME="importuserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The ID of the user that imported the files of a job."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The time the job has been submitted."/>
+        <FIELD NAME="timestart" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timefinish" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The status of a queue job ('new', 'processing', 'finished')."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="attendance_ss_queue_data" COMMENT="import data for cron jobs">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="queueid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The ID of the queue job an entry belongs to."/>
+        <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The status of a file ('new', 'ok', 'error'). In case of 'error', the error field contains the error message."/>
+        <FIELD NAME="error" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The error message (get_string label) in case the status is 'error'."/>
+        <FIELD NAME="info" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The info message (get_string label) in case the status is 'info'."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+        <TABLE NAME="attendance_ss_hotspots" COMMENT="Table to store the hotspots of scanned_pages for retrieval in correct.php.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="scannedpageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the scanned page."/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The key of the hotspot as defined in scanner.php"/>
+        <FIELD NAME="x" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="2" COMMENT="The x coordinate."/>
+        <FIELD NAME="y" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="2" COMMENT="The y-coordinate."/>
+        <FIELD NAME="blank" TYPE="int" LENGTH="1" NOTNULL="false" SEQUENCE="false" COMMENT="Whether it is a blank hotspot."/>
+        <FIELD NAME="time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The time the data was stored. Needed for cleanup operation."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="scannedpageididx" UNIQUE="false" FIELDS="scannedpageid" COMMENT="Index on scannedpageid column."/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

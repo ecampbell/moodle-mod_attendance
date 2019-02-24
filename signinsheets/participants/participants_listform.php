@@ -36,7 +36,7 @@ class signinsheets_participantslistform extends moodleform {
     public function __construct($att, $buttonlabel) {
         $this->attendance = $attendance;
         $this->label = $buttonlabel;
-        parent::__construct('signinsheets.php');
+        parent::__construct('signinsheets/participants.php');
     }
 
     public function definition() {

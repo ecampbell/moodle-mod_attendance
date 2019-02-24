@@ -26,10 +26,10 @@
  *
  **/
 
-require_once(dirname(__FILE__) . '/../../config.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetslocallib.php');
-require_once($CFG->dirroot . '/mod/attendance/report/reportlib.php');
-require_once($CFG->dirroot . '/mod/attendance/report/default.php');
+require_once(dirname(__FILE__) . '/../../../config.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/locallib.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/reportlib.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/default.php');
 
 $id = optional_param('id', 0, PARAM_INT);
 $att = optional_param('att', 0, PARAM_INT);
@@ -58,7 +58,7 @@ if ($id) {
     }
 }
 
-$url = new moodle_url('/mod/attendance/signinsheetsreport.php', array('id' => $cm->id));
+$url = new moodle_url('/mod/attendance/signinsheets/report.php', array('id' => $cm->id));
 if ($mode != '') {
     $url->param('mode', $mode);
 }
@@ -101,7 +101,7 @@ if (!is_readable("report/$mode/report.php")) {
 }
 
 // Open the selected signinsheets report and display it.
-$file = $CFG->dirroot . '/mod/attendance/report/' . $mode . '/report.php';
+$file = $CFG->dirroot . '/mod/attendance/signinsheets/report/' . $mode . '/report.php';
 if (is_readable($file)) {
     include_once($file);
 }

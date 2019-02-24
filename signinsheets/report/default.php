@@ -19,7 +19,7 @@
  *
  * Doesn't do anything on it's own -- it needs to be extended.
  * This class displays signinsheet reports.  Because it is called from
- * within /mod/attendance/report.php you can assume that the page header
+ * within /mod/attendance/signinsheets/report.php you can assume that the page header
  * and footer are taken care of.
  *
  * This file can refer to itself as report.php to pass variables

@@ -25,20 +25,20 @@
  * @license       http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__) . '/../../config.php');
-require_once($CFG->dirroot . '/mod/attendance/report/default.php');
-require_once($CFG->dirroot . '/mod/attendance/report/rimport/scanner.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetslocallib.php');
-require_once($CFG->dirroot . '/mod/attendance/signinsheetsevallib.php');
+require_once(dirname(__FILE__) . '/../../../config.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/default.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/rimport/scanner.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/locallib.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/evallib.php');
 
 $resultid = required_param('resultid', PARAM_INT);
 $pageid      = optional_param('pageid', 0, PARAM_INT);
 
 if (!$result = $DB->get_record('attendance_results', array('id' => $resultid))) {
-    print_error('noresult', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+    print_error('noresult', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->sessionid);
 }
 if (!$scannedpage = $DB->get_record('attendance_scanned_pages', array('id' => $pageid))) {
-    print_error('nopage', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->offlinequizid);
+    print_error('nopage', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->sessionid);
 }
 if (!$offlinequiz = $DB->get_record("attendance", array('id' => $result->attendanceid))) {
     print_error('noattendance', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
@@ -71,7 +71,7 @@ if (!$options->sheetfeedback and !$options->gradedsheetfeedback) {
     print_error('noaccess', 'attendance', $CFG->wwwroot . '/course/view.php?id=' . $COURSE->id, $scannedpage->attendanceid);
 }
 
-$url = new moodle_url('/mod/attendance/image.php', array('pageid' => $scannedpage->id, 'resultid' => $result->id));
+$url = new moodle_url('/mod/attendance/signinsheets/image.php', array('pageid' => $scannedpage->id, 'resultid' => $result->id));
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('popup');
 
@@ -153,13 +153,13 @@ if ($sheetloaded) {
         $questionids = offlinequiz_get_group_question_ids($offlinequiz, $group->id);
 
         list($qsql, $params) = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED, 'qid');
-        $params['offlinequizid'] = $offlinequiz->id;
+        $params['sessionid'] = $offlinequiz->id;
         $params['offlinegroupid'] = $group->id;
 
         $sql = "SELECT q.*, ogq.maxmark
                   FROM {question} q,
                        {offlinequiz_group_questions} ogq
-                 WHERE ogq.offlinequizid = :offlinequizid
+                 WHERE ogq.sessionid = :sessionid
                    AND ogq.offlinegroupid = :offlinegroupid
                    AND q.id = ogq.questionid
                    AND q.id $qsql";

@@ -26,7 +26,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/mod/attendance/report/rimport/scanner.php');
+require_once($CFG->dirroot . '/mod/attendance/signinsheets/report/rimport/scanner.php');
 
 /**
  * Class that contains all the functions to interpret scanned participant forms.
