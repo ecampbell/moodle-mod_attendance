@@ -164,7 +164,7 @@ switch($action) {
         echo $output->render($header);
         echo $output->render($tabs);
 
-        echo $OUTPUT->heading(format_string($signinsheet->name));
+        echo $OUTPUT->heading(format_string($attendance->name));
         echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
         // Show update button.
         ?>
@@ -189,7 +189,7 @@ switch($action) {
         echo $OUTPUT->box_start('boxaligncenter generalbox boxwidthnormal');
         $participants = new attendance_take_data($att);
 
-        $sql = "SELECT *
+        $sql = "SELECT id, name, number, filename, sessionid, attendanceid
                 FROM {attendance_ss_p_lists}
                 WHERE attendanceid = :attendanceid
                 ORDER BY name ASC";
@@ -437,7 +437,7 @@ switch($action) {
             echo $output->render($header);
             echo $output->render($tabs);
 
-            echo $OUTPUT->heading(format_string($signinsheet->name));
+            echo $OUTPUT->heading(format_string($attendance->name));
             echo $OUTPUT->heading_with_help(get_string('signinsheetparticipantsfiles', 'attendance'), 'signinsheetparticipants', 'attendance');
         }
         // Show update button.
