@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The results import report for attendance sessions
+ * The signin sheet import report for attendance sessions
  *
  * @package       mod
  * @subpackage    attendance
@@ -52,8 +52,8 @@ class signinsheets_rimport_report extends signinsheets_default_report {
         $table = new signinsheets_selectall_table('mod_attendance_import_report', 'signinsheets/report.php', $tableparams);
 
         $tablecolumns = array('checkbox', 'counter', 'userkey', 'groupnumber', 'pagenumber', 'time', 'error', 'info', 'link');
-        $tableheaders = array('', '#', get_string($attendanceconfig->ID_field, 'signinsheets_rimport'),
-                get_string('group'), get_string('page'), get_string('importedon', 'signinsheets_rimport'),
+        $tableheaders = array('', '#', get_string($attendanceconfig->ID_field, 'attendance_rimport'),
+                get_string('group'), get_string('page'), get_string('importedon', 'attendance_rimport'),
                 get_string('error'), get_string('info'), '');
 
         $table->initialbars(true);
@@ -135,10 +135,10 @@ class signinsheets_rimport_report extends signinsheets_default_report {
 
             $errorstr = '';
             if (!empty($page->error)) {
-                $errorstr = get_string('error' . $page->error, 'signinsheets_rimport');
+                $errorstr = get_string('error' . $page->error, 'attendance_rimport');
             }
             if ($page->status == 'suspended') {
-                $errorstr = get_string('waitingforanalysis', 'signinsheets_rimport');
+                $errorstr = get_string('waitingforanalysis', 'attendance_rimport');
             }
             $row = array(
                     '<input type="checkbox" name="p' . $page->id . '" value="'.$page->id.'"  class="select-multiple-checkbox" />',
@@ -230,7 +230,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                     }
                     $files = get_directory_list($dirname);
                 } else {
-                    echo $OUTPUT->notification(get_string('couldnotunzip', 'signinsheets_rimport', $realfilename), 'notifyproblem');
+                    echo $OUTPUT->notification(get_string('couldnotunzip', 'attendance_rimport', $realfilename), 'notifyproblem');
 
                 }
             } else if ($mimetype == 'image/tiff') {
@@ -265,7 +265,7 @@ class signinsheets_rimport_report extends signinsheets_default_report {
             $job->timefinish = 0;
             $job->status = 'new';
             if (!$job->id = $DB->insert_record('attendance_ss_queue', $job)) {
-                echo $OUTPUT->notification(get_string('couldnotcreatejob', 'signinsheets_rimport'), 'notifyproblem');
+                echo $OUTPUT->notification(get_string('couldnotcreatejob', 'attendance_rimport'), 'notifyproblem');
             }
 
             // Add the files to the job.
@@ -276,13 +276,13 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                 $jobfile->filename = $dirname . '/' . $file;
                 $jobfile->status = 'new';
                 if (!$jobfile->id = $DB->insert_record('attendance_ss_queue_data', $jobfile)) {
-                    echo $OUTPUT->notification(get_string('couldnotcreatejobfile', 'signinsheets_rimport'), 'notifyproblem');
+                    echo $OUTPUT->notification(get_string('couldnotcreatejobfile', 'attendance_rimport'), 'notifyproblem');
                     $added--;
                 }
             }
 
             // Notify the user.
-            echo $OUTPUT->notification(get_string('addingfilestoqueue', 'signinsheets_rimport', $added), 'notifysuccess');
+            echo $OUTPUT->notification(get_string('addingfilestoqueue', 'attendance_rimport', $added), 'notifysuccess');
             echo $OUTPUT->continue_button($CFG->wwwroot . '/mod/attendance/signinsheets/report.php?q=' . $offlinequiz->id . '&mode=rimport');
         } else {
 
@@ -300,10 +300,10 @@ class signinsheets_rimport_report extends signinsheets_default_report {
                     'status2' => 'processing', 'status3' => 'new'));
 
             if ($newforms->count > 0) {
-                echo $OUTPUT->notification(get_string('newformsinqueue', 'signinsheets_rimport', $newforms->count), 'notifysuccess');
+                echo $OUTPUT->notification(get_string('newformsinqueue', 'attendance_rimport', $newforms->count), 'notifysuccess');
             }
             if ($processingforms->count > 0) {
-                echo $OUTPUT->notification(get_string('processingformsinqueue', 'signinsheets_rimport', $processingforms->count),
+                echo $OUTPUT->notification(get_string('processingformsinqueue', 'attendance_rimport', $processingforms->count),
                         'notifysuccess');
             }
 

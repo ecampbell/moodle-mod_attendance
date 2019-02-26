@@ -600,7 +600,7 @@ $imagefile->get_filename() .'" border="1" width="' . OQ_IMAGE_WIDTH .
 if ($scannedpage->status == 'error') {
     echo "<div style=\"position:absolute; top: 20px; left: 130px\">\n";
     echo "&nbsp;&nbsp;&nbsp;&nbsp;<strong style=\"color: red\">(" .
-        get_string('error' . $scannedpage->error, 'signinsheets_rimport') . ")</strong>\n";
+        get_string('error' . $scannedpage->error, 'attendance_rimport') . ")</strong>\n";
     echo "</div>\n";
 }
 

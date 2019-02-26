@@ -331,7 +331,7 @@ switch($action) {
                         unlink($importfile);
                         $files = get_directory_list($tempdir);
                     } else {
-                        echo $OUTPUT->notification(get_string('couldnotunzip', 'signinsheets_rimport', $realfilename),
+                        echo $OUTPUT->notification(get_string('couldnotunzip', 'attendance_rimport', $realfilename),
                                                    'notifyproblem');
 
                     }

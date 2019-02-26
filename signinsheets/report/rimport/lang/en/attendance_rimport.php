@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'signinsheets_rimport', language 'en'
+ * Strings for component 'attendance_rimport', language 'en'
  *
  * @package       mod
  * @subpackage    attendance
@@ -57,7 +57,7 @@ $string['import'] = 'Import';
 $string['importlisterror'] = 'List not detected';
 $string['importedon'] = 'Imported on';
 $string['importpforms'] = 'Import lists of participants';
-$string['pluginname'] = 'Signinsheets Import';
+$string['pluginname'] = 'Signin sheets Import';
 $string['privacy:metadata'] = 'This plugin does not store any user related data.';
 $string['showpage'] = 'Show';
 $string['username'] = 'Username';

@@ -34,16 +34,16 @@ class signinsheets_participants_upload_form extends moodleform {
     public function definition() {
         $mform = $this->_form;
 
-        $mform->addElement('header', 'importfileupload', get_string('importpforms', 'signinsheets_rimport'));
+        $mform->addElement('header', 'importfileupload', get_string('importpforms', 'attendance_rimport'));
 
-        $mform->addElement('filepicker', 'newfile', get_string('ziporimagefile', 'signinsheets_rimport'), null,
+        $mform->addElement('filepicker', 'newfile', get_string('ziporimagefile', 'attendance_rimport'), null,
                       array('subdirs' => 0, 'accepted_types' => array('web_image', '.zip', '.ZIP', '.tif', '.TIF',
                       '.tiff', '.TIFF', '.jpg', '.JPG', '.jpeg', '.JPEG')));
 
         $mform->addRule('newfile', null, 'required', null, 'client');
 
         // Submit button.
-        $mform->addElement('submit', 'submitbutton', get_string('import', 'signinsheets_rimport'));
+        $mform->addElement('submit', 'submitbutton', get_string('import', 'attendance_rimport'));
 
     }
 }

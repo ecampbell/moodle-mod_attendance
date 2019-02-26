@@ -37,9 +37,9 @@ class signinsheets_upload_form extends moodleform {
         // -------------------------------------------------------------------------------
 
         // The file to import.
-        $mform->addElement('header', 'importfileupload', get_string('importforms', 'signinsheets_rimport'));
+        $mform->addElement('header', 'importfileupload', get_string('importforms', 'attendance_rimport'));
 
-        $mform->addElement('filepicker', 'newfile', get_string('ziporimagefile', 'signinsheets_rimport'), null,
+        $mform->addElement('filepicker', 'newfile', get_string('ziporimagefile', 'attendance_rimport'), null,
                 array('subdirs' => 0, 'accepted_types' =>
                         array('.jpeg', 'JPEG', 'JPG', 'jpg', '.png', '.zip',
                               '.ZIP', '.tif', '.TIF', '.tiff', '.TIFF' , ".pdf", ".PDF")));
@@ -47,6 +47,6 @@ class signinsheets_upload_form extends moodleform {
         $mform->addRule('newfile', null, 'required', null, 'client');
 
         // Submit button.
-        $mform->addElement('submit', 'submitbutton', get_string('import', 'signinsheets_rimport'));
+        $mform->addElement('submit', 'submitbutton', get_string('import', 'attendance_rimport'));
     }
 }

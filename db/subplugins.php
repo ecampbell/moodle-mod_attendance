@@ -15,18 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Signinsheet rimport report version info
+ * Define the capabilities for offine quizzes
  *
  * @package       mod
  * @subpackage    attendance
  * @author        Juergen Zimmer <zimmerj7@univie.ac.at>
  * @copyright     2015 Academic Moodle Cooperation {@link http://www.academic-moodle-cooperation.org}
+ * @since         Moodle 2.2+
  * @license       http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  **/
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version  = 2019022601;
-$plugin->requires = 2018050800; // Requires 3.5.
-$plugin->component = 'attendance_rimport';
+$subplugins = array('attendance' => 'mod/attendance/signinsheets/report');
