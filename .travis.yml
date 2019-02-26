@@ -18,7 +18,12 @@ cache:
 php:
   - 7.1
   - 7.2
-env:
+# safelist
+branches:
+  only:
+  - ISSUE356-scanning5
+ 
+ env:
  global:
   - MOODLE_BRANCH=master
   - MUSTACHE_IGNORE_NAMES=mobile_teacher_form.mustache
